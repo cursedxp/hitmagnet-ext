@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "HitMagnet Thumbnail Collector",
+  "version": "1.0",
+  "description": "Collect thumbnails from YouTube videos and save them to your HitMagnet collection.",
+  "permissions": ["storage", "activeTab", "tabs"],
+  "host_permissions": ["https://*.youtube.com/*"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.youtube.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
