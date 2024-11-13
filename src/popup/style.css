@@ -60,3 +60,26 @@ body {
 .btn.googleSignin:hover {
   background-color: #f8f9fa;
 }
+.btn.signout-button {
+  background-color: #f8f9fa;
+  font-weight: 700;
+  color: #3c4043;
+}
+.btn.signout-button:hover {
+  background-color: #e8e8e8;
+}
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.user-info .user-picture {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+.user-info .user-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
