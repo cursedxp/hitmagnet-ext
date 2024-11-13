@@ -19,6 +19,10 @@ export const initializeGoogleAuth = () => {
             }
           );
           const userInfo = await response.json();
+          await chrome.storage.local.set({
+            isAuthenticated: true,
+            user: userInfo,
+          });
           return {
             success: true,
             user: userInfo,
@@ -38,6 +42,10 @@ export const initializeGoogleAuth = () => {
         const auth = await chrome.identity.getAuthToken({
           interactive: false,
         });
+        await chrome.storage.local.set({
+          isAuthenticated: false,
+          user: null,
+        });
         if (auth.token) {
           await chrome.identity.removeCachedAuthToken({ token: auth.token });
           return {
@@ -51,6 +59,13 @@ export const initializeGoogleAuth = () => {
           error: error.message,
         };
       }
+    },
+    checkAuthState: async () => {
+      return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ type: "checkAuth" }, (response) => {
+          resolve(response);
+        });
+      });
     },
   };
 };
