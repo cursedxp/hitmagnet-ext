@@ -24,6 +24,18 @@ export const initializeGoogleAuth = () => {
             isAuthenticated: true,
             user: userInfo,
           });
+
+          // Send message to content script
+          chrome.tabs.query({ url: "*://*.youtube.com/*" }, function (tabs) {
+            tabs.forEach((tab) => {
+              chrome.tabs.sendMessage(tab.id, {
+                type: "authStateChanged",
+                isAuthenticated: true,
+                user: userInfo,
+              });
+            });
+          });
+
           return {
             success: true,
             user: userInfo,
