@@ -59,6 +59,18 @@ export const initializeGoogleAuth = () => {
           isAuthenticated: false,
           user: null,
         });
+
+        // Send message to content script about sign out
+        chrome.tabs.query({ url: "*://*.youtube.com/*" }, function (tabs) {
+          tabs.forEach((tab) => {
+            chrome.tabs.sendMessage(tab.id, {
+              type: "authStateChanged",
+              isAuthenticated: false,
+              user: null,
+            });
+          });
+        });
+
         if (auth.token) {
           await chrome.identity.removeCachedAuthToken({ token: auth.token });
           return {

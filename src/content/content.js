@@ -27,18 +27,18 @@ const checkAuthAndCreatePanel = async () => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "authStateChanged") {
     console.log("Auth state changed:", message);
+    const existingPanel = document.getElementById("youtube-panel");
+
     if (message.isAuthenticated && message.user) {
       // Remove existing panel if it exists
-      const existingPanel = document.getElementById("youtube-panel");
       if (existingPanel) {
         existingPanel.remove();
       }
       createFloatingPanel(message.user);
     } else {
-      // Remove panel if user is signed out
-      const panel = document.getElementById("youtube-panel");
-      if (panel) {
-        panel.remove();
+      // Remove panel when signed out
+      if (existingPanel) {
+        existingPanel.remove();
       }
     }
   }
