@@ -20,6 +20,9 @@ const addButtonsToVideos = () => {
         font-size: 12px;
         cursor: pointer;
       `;
+    button.onclick = () => {
+      console.log("Button clicked");
+    };
 
     // Add button to the second metadata row (the one with views and time)
     const isViewsRow = row.textContent.includes("views");
