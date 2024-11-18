@@ -1,54 +1,42 @@
-const checkAuthAndCreatePanel = async () => {
-  try {
-    if (document.getElementById("youtube-panel")) {
+import { setupVideoButtonObserver } from "./button";
+
+const checkAuthAndInitialize = async () => {
+  if (document.getElementById("youtube-panel")) return;
+
+  chrome.runtime.sendMessage({ type: "checkAuth" }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error("Runtime error:", chrome.runtime.lastError);
       return;
     }
 
-    console.log("Checking auth status...");
-    chrome.runtime.sendMessage({ type: "checkAuth" }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.log("Runtime error:", chrome.runtime.lastError);
-        return;
-      }
-
-      if (response && response.isAuthenticated && response.user) {
-        console.log("User is authenticated, creating panel...");
-        createFloatingPanel(response.user);
-      }
-    });
-  } catch (error) {
-    console.log("Error checking auth:", error);
-  }
+    if (response?.isAuthenticated && response?.user) {
+      createPanel(response.user);
+      setupVideoButtonObserver(); // Only setup buttons when authenticated
+    }
+  });
 };
 
-// Listen for auth state changes
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  try {
-    if (message.type === "authStateChanged") {
-      console.log("Auth state changed:", message);
-      const existingPanel = document.getElementById("youtube-panel");
+  if (message.type === "authStateChanged") {
+    const panel = document.getElementById("youtube-panel");
 
-      if (message.isAuthenticated && message.user) {
-        if (existingPanel) {
-          existingPanel.remove();
-        }
-        createFloatingPanel(message.user);
-      } else {
-        if (existingPanel) {
-          existingPanel.remove();
-        }
-      }
+    if (message.isAuthenticated && message.user) {
+      if (panel) panel.remove();
+      createPanel(message.user);
+      setupVideoButtonObserver();
+    } else {
+      if (panel) panel.remove();
+      // Remove buttons when logged out
+      document
+        .querySelectorAll(".custom-button")
+        .forEach((btn) => btn.remove());
     }
-    // Always send a response
-    sendResponse({ success: true });
-  } catch (error) {
-    console.error("Error in message listener:", error);
-    sendResponse({ success: false, error: error.message });
   }
-  return true; // Keep the message channel open for async response
+  sendResponse({ success: true });
+  return true;
 });
 
-const createFloatingPanel = (user) => {
+const createPanel = (user) => {
   const panel = document.createElement("div");
   panel.id = "youtube-panel";
   panel.style.cssText = `
@@ -76,10 +64,8 @@ const createFloatingPanel = (user) => {
     margin: -16px -16px 16px -16px;
   `;
 
-  const title = document.createTextNode("Hitmagnet");
-  header.appendChild(title);
+  header.appendChild(document.createTextNode("Hitmagnet"));
 
-  // Add user info to header
   const userInfo = document.createElement("div");
   userInfo.style.cssText = `
     display: flex;
@@ -99,22 +85,17 @@ const createFloatingPanel = (user) => {
     userInfo.appendChild(userPic);
   }
 
-  const userName = document.createTextNode(user.name || user.email);
-  userInfo.appendChild(userName);
+  userInfo.appendChild(document.createTextNode(user.name || user.email));
   header.appendChild(userInfo);
 
   const content = document.createElement("div");
-  content.innerHTML = `
-    <p>Welcome ${user.name || user.email}</p>
-  `;
+  content.innerHTML = `<p>Welcome ${user.name || user.email}</p>`;
 
   panel.appendChild(header);
   panel.appendChild(content);
   document.body.appendChild(panel);
 };
 
-// Initialize when on YouTube
 if (window.location.hostname === "www.youtube.com") {
-  console.log("On YouTube, initializing panel...");
-  checkAuthAndCreatePanel();
+  checkAuthAndInitialize();
 }
