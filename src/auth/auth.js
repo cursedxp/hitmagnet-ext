@@ -19,6 +19,7 @@ export const initializeGoogleAuth = () => {
             }
           );
           const userInfo = await response.json();
+          console.log("Setting auth state:", userInfo);
           await chrome.storage.local.set({
             isAuthenticated: true,
             user: userInfo,
@@ -30,7 +31,7 @@ export const initializeGoogleAuth = () => {
           };
         }
       } catch (error) {
-        console.error(error);
+        console.error("Sign in error:", error);
         return {
           success: false,
           error: error.message,

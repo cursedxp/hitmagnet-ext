@@ -1,5 +1,5 @@
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.set({
+  chrome.storage.local.set({
     isAuthenticated: false,
     user: null,
   });
