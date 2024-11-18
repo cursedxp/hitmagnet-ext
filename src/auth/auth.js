@@ -1,4 +1,28 @@
 export const initializeGoogleAuth = () => {
+  const sendMessageToTabs = async (message) => {
+    try {
+      const tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
+      for (const tab of tabs) {
+        try {
+          await new Promise((resolve, reject) => {
+            chrome.tabs.sendMessage(tab.id, message, (response) => {
+              if (chrome.runtime.lastError) {
+                // Ignore the error and resolve anyway
+                resolve();
+              } else {
+                resolve(response);
+              }
+            });
+          });
+        } catch (err) {
+          console.log(`Error sending message to tab ${tab.id}:`, err);
+        }
+      }
+    } catch (err) {
+      console.error("Error querying tabs:", err);
+    }
+  };
+
   return {
     signIn: async () => {
       try {
@@ -20,20 +44,17 @@ export const initializeGoogleAuth = () => {
           );
           const userInfo = await response.json();
           console.log("Setting auth state:", userInfo);
+
           await chrome.storage.local.set({
             isAuthenticated: true,
             user: userInfo,
           });
 
-          // Send message to content script
-          chrome.tabs.query({ url: "*://*.youtube.com/*" }, function (tabs) {
-            tabs.forEach((tab) => {
-              chrome.tabs.sendMessage(tab.id, {
-                type: "authStateChanged",
-                isAuthenticated: true,
-                user: userInfo,
-              });
-            });
+          // Send message to all YouTube tabs
+          await sendMessageToTabs({
+            type: "authStateChanged",
+            isAuthenticated: true,
+            user: userInfo,
           });
 
           return {
@@ -50,45 +71,43 @@ export const initializeGoogleAuth = () => {
         };
       }
     },
+
     signOut: async () => {
       try {
         const auth = await chrome.identity.getAuthToken({
           interactive: false,
         });
+
         await chrome.storage.local.set({
           isAuthenticated: false,
           user: null,
         });
 
-        // Send message to content script about sign out
-        chrome.tabs.query({ url: "*://*.youtube.com/*" }, function (tabs) {
-          tabs.forEach((tab) => {
-            chrome.tabs.sendMessage(tab.id, {
-              type: "authStateChanged",
-              isAuthenticated: false,
-              user: null,
-            });
-          });
+        // Send message to all YouTube tabs
+        await sendMessageToTabs({
+          type: "authStateChanged",
+          isAuthenticated: false,
+          user: null,
         });
 
         if (auth.token) {
           await chrome.identity.removeCachedAuthToken({ token: auth.token });
-          return {
-            success: true,
-          };
         }
+
+        return { success: true };
       } catch (error) {
-        console.error(error);
+        console.error("Sign out error:", error);
         return {
           success: false,
           error: error.message,
         };
       }
     },
+
     checkAuthState: async () => {
       return new Promise((resolve) => {
-        chrome.runtime.sendMessage({ type: "checkAuth" }, (response) => {
-          resolve(response);
+        chrome.storage.local.get(["isAuthenticated", "user"], (result) => {
+          resolve(result);
         });
       });
     },

@@ -1,6 +1,5 @@
 const checkAuthAndCreatePanel = async () => {
   try {
-    // Skip if panel already exists
     if (document.getElementById("youtube-panel")) {
       return;
     }
@@ -12,7 +11,6 @@ const checkAuthAndCreatePanel = async () => {
         return;
       }
 
-      console.log("Auth response:", response);
       if (response && response.isAuthenticated && response.user) {
         console.log("User is authenticated, creating panel...");
         createFloatingPanel(response.user);
@@ -25,23 +23,29 @@ const checkAuthAndCreatePanel = async () => {
 
 // Listen for auth state changes
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "authStateChanged") {
-    console.log("Auth state changed:", message);
-    const existingPanel = document.getElementById("youtube-panel");
+  try {
+    if (message.type === "authStateChanged") {
+      console.log("Auth state changed:", message);
+      const existingPanel = document.getElementById("youtube-panel");
 
-    if (message.isAuthenticated && message.user) {
-      // Remove existing panel if it exists
-      if (existingPanel) {
-        existingPanel.remove();
-      }
-      createFloatingPanel(message.user);
-    } else {
-      // Remove panel when signed out
-      if (existingPanel) {
-        existingPanel.remove();
+      if (message.isAuthenticated && message.user) {
+        if (existingPanel) {
+          existingPanel.remove();
+        }
+        createFloatingPanel(message.user);
+      } else {
+        if (existingPanel) {
+          existingPanel.remove();
+        }
       }
     }
+    // Always send a response
+    sendResponse({ success: true });
+  } catch (error) {
+    console.error("Error in message listener:", error);
+    sendResponse({ success: false, error: error.message });
   }
+  return true; // Keep the message channel open for async response
 });
 
 const createFloatingPanel = (user) => {
@@ -49,8 +53,9 @@ const createFloatingPanel = (user) => {
   panel.id = "youtube-panel";
   panel.style.cssText = `
     position: fixed;
-    top: 20px;
-    right: 20px;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     width: 680px;
     background: white;
     padding: 16px;
@@ -108,60 +113,8 @@ const createFloatingPanel = (user) => {
   document.body.appendChild(panel);
 };
 
-// Initialize panel when on YouTube
+// Initialize when on YouTube
 if (window.location.hostname === "www.youtube.com") {
   console.log("On YouTube, initializing panel...");
-
-  let observer = null;
-  let lastUrl = location.href;
-
-  const initializePanel = () => {
-    try {
-      checkAuthAndCreatePanel();
-
-      // Setup observer to only check when URL changes
-      if (!observer) {
-        observer = new MutationObserver(() => {
-          if (location.href !== lastUrl) {
-            lastUrl = location.href;
-            checkAuthAndCreatePanel();
-          }
-        });
-
-        observer.observe(document.documentElement, {
-          childList: true,
-          subtree: true,
-        });
-      }
-    } catch (error) {
-      console.log("Initialization error:", error);
-      cleanup();
-    }
-  };
-
-  // Cleanup function
-  const cleanup = () => {
-    if (observer) {
-      observer.disconnect();
-      observer = null;
-    }
-    const panel = document.getElementById("youtube-panel");
-    if (panel) {
-      panel.remove();
-    }
-  };
-
-  // Handle extension unload
-  chrome.runtime.onConnect.addListener((port) => {
-    port.onDisconnect.addListener(() => {
-      cleanup();
-    });
-  });
-
-  // Initial load
-  if (document.readyState === "complete") {
-    initializePanel();
-  } else {
-    window.addEventListener("load", initializePanel);
-  }
+  checkAuthAndCreatePanel();
 }
