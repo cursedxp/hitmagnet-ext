@@ -1,4 +1,4 @@
-import { setupVideoButtonObserver } from "./button";
+import { setupVideoButtonObserver } from "./addButton";
 
 const checkAuthAndInitialize = async () => {
   if (document.getElementById("youtube-panel")) return;
