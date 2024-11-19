@@ -1,12 +1,4 @@
 export const createDownloadAllButton = () => {
-  const navigationContainer = document.createElement("div");
-  navigationContainer.style.cssText = `
-    display: flex;
-    justify-content: flex-end;
-    width: 100%;
-    margin-bottom: 16px;
-  `;
-
   const button = document.createElement("button");
   button.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -14,11 +6,10 @@ export const createDownloadAllButton = () => {
       <polyline points="7 10 12 15 17 10"></polyline>
       <line x1="12" y1="15" x2="12" y2="3"></line>
     </svg>
-    Download All
   `;
   button.className = "download-all-btn";
   button.style.cssText = `
-    padding: 8px 16px;
+    padding: 8px 8px;
     background: white;
     color: black;
     border: none;
@@ -65,8 +56,7 @@ export const createDownloadAllButton = () => {
   }, 0);
 
   button.addEventListener("click", handleDownloadAll);
-  navigationContainer.appendChild(button);
-  return navigationContainer;
+  return button;
 };
 
 const handleDownloadAll = async () => {

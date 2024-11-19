@@ -1,6 +1,7 @@
 import { setupVideoButtonObserver } from "./addButton";
 import { createHeader } from "./header";
 import { createDownloadAllButton } from "./downloadAllButton";
+import { createRemoveAllButton } from "./removeAllButton";
 
 const checkAuthAndInitialize = async () => {
   if (document.getElementById("youtube-panel")) return;
@@ -87,8 +88,20 @@ const createPanel = (user) => {
     }
   `;
 
+  const buttonsContainer = document.createElement("div");
+  buttonsContainer.style.cssText = `
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    gap: 8px;
+    margin-bottom: 16px;
+  `;
+
+  buttonsContainer.appendChild(createDownloadAllButton());
+  buttonsContainer.appendChild(createRemoveAllButton());
+
   panel.appendChild(header);
-  panel.appendChild(createDownloadAllButton());
+  panel.appendChild(buttonsContainer);
   panel.appendChild(content);
 
   document.body.appendChild(panel);
