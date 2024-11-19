@@ -1,6 +1,5 @@
 import { setupVideoButtonObserver } from "./addButton";
 import { createHeader } from "./header";
-import { createImagePreview } from "./imagePreview";
 
 const checkAuthAndInitialize = async () => {
   if (document.getElementById("youtube-panel")) return;
@@ -53,11 +52,39 @@ const createPanel = (user) => {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     z-index: 9999;
     color: black;
+    max-height: 280px;
   `;
 
   const header = createHeader(user);
   const content = document.createElement("div");
-  content.innerHTML = `<p>Welcome ${user.name || user.email}</p>`;
+  content.id = "panel-content";
+  content.style.cssText = `
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px;
+    scroll-behavior: smooth;
+    
+    scrollbar-width: thin;
+    scrollbar-color: #888 #f1f1f1;
+    
+    &::-webkit-scrollbar {
+      height: 8px;
+    }
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+  `;
 
   panel.appendChild(header);
   panel.appendChild(content);

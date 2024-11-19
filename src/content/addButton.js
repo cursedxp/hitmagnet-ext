@@ -1,3 +1,5 @@
+import { createThumbnailPreview } from "./imagePreview";
+
 const addButtonsToVideos = () => {
   // For video metadata rows (avoid channel metadata)
   const metadataSelectors = [
@@ -39,18 +41,33 @@ const addButtonsToVideos = () => {
         const videoId = videoLink?.href?.split("v=")[1]?.split("&")[0];
 
         if (videoId) {
+          const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+          const videoData = {
+            title: videoContainer
+              .querySelector("#video-title")
+              ?.textContent?.trim(),
+            thumbnail: thumbnailUrl,
+            duration: videoContainer
+              .querySelector("ytd-thumbnail-overlay-time-status-renderer")
+              ?.textContent?.trim(),
+          };
+
+          const panelContent = document.querySelector("#panel-content");
+          if (panelContent) {
+            const thumbnailPreview = createThumbnailPreview(videoData);
+            panelContent.appendChild(thumbnailPreview);
+            thumbnailPreview.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+              inline: "end",
+            });
+          }
+
           chrome.runtime.sendMessage({
             type: "addVideo",
             videoId,
-            videoData: {
-              title: videoContainer
-                .querySelector("#video-title")
-                ?.textContent?.trim(),
-              thumbnail: videoContainer.querySelector("#img")?.src,
-              duration: videoContainer
-                .querySelector("ytd-thumbnail-overlay-time-status-renderer")
-                ?.textContent?.trim(),
-            },
+            videoData,
           });
         }
       });
