@@ -1,4 +1,5 @@
 import { setupVideoButtonObserver } from "./addButton";
+import { createHeader } from "./header";
 
 const checkAuthAndInitialize = async () => {
   if (document.getElementById("youtube-panel")) return;
@@ -53,41 +54,7 @@ const createPanel = (user) => {
     color: black;
   `;
 
-  const header = document.createElement("div");
-  header.style.cssText = `
-    padding: 8px;
-    background: #f0f0f0;
-    border-radius: 8px 8px 0 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: -16px -16px 16px -16px;
-  `;
-
-  header.appendChild(document.createTextNode("Hitmagnet"));
-
-  const userInfo = document.createElement("div");
-  userInfo.style.cssText = `
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-right: 8px;
-  `;
-
-  if (user.picture) {
-    const userPic = document.createElement("img");
-    userPic.src = user.picture;
-    userPic.style.cssText = `
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-    `;
-    userInfo.appendChild(userPic);
-  }
-
-  userInfo.appendChild(document.createTextNode(user.name || user.email));
-  header.appendChild(userInfo);
-
+  const header = createHeader(user);
   const content = document.createElement("div");
   content.innerHTML = `<p>Welcome ${user.name || user.email}</p>`;
 
