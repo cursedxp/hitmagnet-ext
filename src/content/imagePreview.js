@@ -41,20 +41,39 @@ const createThumbnailPreview = (videoData) => {
     color: white;
     font-size: 16px;
     cursor: pointer;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     transition: background 0.2s;
-    z-index: 1;
+    z-index: 2;
 
     &:hover {
       background: rgba(0, 0, 0, 0.9);
     }
   `;
 
-  removeButton.addEventListener("click", (e) => {
-    e.stopPropagation();
-    previewContainer.remove();
+  const overlay = document.createElement("div");
+  overlay.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0);
+    transition: background 0.2s;
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 1;
+  `;
+
+  previewContainer.addEventListener("mouseenter", () => {
+    removeButton.style.display = "flex";
+    overlay.style.background = "rgba(0, 0, 0, 0.3)";
+  });
+
+  previewContainer.addEventListener("mouseleave", () => {
+    removeButton.style.display = "none";
+    overlay.style.background = "rgba(0, 0, 0, 0)";
   });
 
   const infoContainer = document.createElement("div");
@@ -63,8 +82,9 @@ const createThumbnailPreview = (videoData) => {
     overflow: hidden;
   `;
 
-  previewContainer.appendChild(removeButton);
   previewContainer.appendChild(thumbnail);
+  previewContainer.appendChild(overlay);
+  previewContainer.appendChild(removeButton);
   previewContainer.appendChild(infoContainer);
 
   return previewContainer;
