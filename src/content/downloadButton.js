@@ -40,7 +40,34 @@ const createDownloadButton = () => {
 
   const handleDownload = async (thumbnailUrl) => {
     try {
-      const response = await fetch(thumbnailUrl);
+      // Try different thumbnail qualities in order of highest to lowest
+      const qualities = [
+        "maxresdefault",
+        "sddefault",
+        "hqdefault",
+        "mqdefault",
+        "default",
+      ];
+
+      // Extract the video ID from the thumbnail URL
+      const videoId = thumbnailUrl.match(/\/vi\/([^/]+)\//)?.[1];
+      if (!videoId) throw new Error("Couldn't extract video ID");
+
+      // Try each quality until we find one that exists
+      let response;
+      let finalUrl;
+      for (const quality of qualities) {
+        finalUrl = `https://img.youtube.com/vi/${videoId}/${quality}.jpg`;
+        response = await fetch(finalUrl);
+        if (response.ok) break;
+      }
+
+      // If none worked, fall back to original URL
+      if (!response?.ok) {
+        finalUrl = thumbnailUrl;
+        response = await fetch(thumbnailUrl);
+      }
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
