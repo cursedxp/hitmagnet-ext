@@ -1,5 +1,6 @@
 import { setupVideoButtonObserver } from "./addButton";
 import { createHeader } from "./header";
+import { createDownloadAllButton } from "./downloadAllButton";
 
 const checkAuthAndInitialize = async () => {
   if (document.getElementById("youtube-panel")) return;
@@ -87,7 +88,9 @@ const createPanel = (user) => {
   `;
 
   panel.appendChild(header);
+  panel.appendChild(createDownloadAllButton());
   panel.appendChild(content);
+
   document.body.appendChild(panel);
 };
 
