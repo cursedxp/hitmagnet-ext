@@ -1,3 +1,5 @@
+import { createDownloadButton } from "./downloadButton";
+
 const createThumbnailPreview = (videoData) => {
   const previewContainer = document.createElement("div");
   previewContainer.className = "thumbnail-preview";
@@ -52,6 +54,15 @@ const createThumbnailPreview = (videoData) => {
     }
   `;
 
+  removeButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    previewContainer.remove();
+
+    if (typeof videoData.onRemove === "function") {
+      videoData.onRemove(videoData);
+    }
+  });
+
   const overlay = document.createElement("div");
   overlay.style.cssText = `
     position: absolute;
@@ -66,13 +77,22 @@ const createThumbnailPreview = (videoData) => {
     z-index: 1;
   `;
 
+  const { downloadButton, handleDownload } = createDownloadButton();
+
+  downloadButton.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    await handleDownload(videoData.thumbnail);
+  });
+
   previewContainer.addEventListener("mouseenter", () => {
     removeButton.style.display = "flex";
+    downloadButton.style.display = "flex";
     overlay.style.background = "rgba(0, 0, 0, 0.3)";
   });
 
   previewContainer.addEventListener("mouseleave", () => {
     removeButton.style.display = "none";
+    downloadButton.style.display = "none";
     overlay.style.background = "rgba(0, 0, 0, 0)";
   });
 
@@ -85,6 +105,7 @@ const createThumbnailPreview = (videoData) => {
   previewContainer.appendChild(thumbnail);
   previewContainer.appendChild(overlay);
   previewContainer.appendChild(removeButton);
+  previewContainer.appendChild(downloadButton);
   previewContainer.appendChild(infoContainer);
 
   return previewContainer;
