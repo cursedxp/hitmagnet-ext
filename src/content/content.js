@@ -2,7 +2,7 @@ import { setupVideoButtonObserver } from "./addButton";
 import { createHeader } from "./header";
 import { createDownloadAllButton } from "./downloadAllButton";
 import { createRemoveAllButton } from "./removeAllButton";
-
+import { createCollectionManager } from "./collectionManager";
 const checkAuthAndInitialize = async () => {
   if (document.getElementById("youtube-panel")) return;
 
@@ -89,6 +89,13 @@ const createPanel = (user) => {
     }
   `;
 
+  const navigationContainer = document.createElement("div");
+  navigationContainer.style.cssText = `
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 16px;
+  `;
   const buttonsContainer = document.createElement("div");
   buttonsContainer.style.cssText = `
     display: flex;
@@ -101,8 +108,11 @@ const createPanel = (user) => {
   buttonsContainer.appendChild(createDownloadAllButton());
   buttonsContainer.appendChild(createRemoveAllButton());
 
+  navigationContainer.appendChild(createCollectionManager());
+  navigationContainer.appendChild(buttonsContainer);
+
   panel.appendChild(header);
-  panel.appendChild(buttonsContainer);
+  panel.appendChild(navigationContainer);
   panel.appendChild(content);
 
   document.body.appendChild(panel);
