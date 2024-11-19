@@ -57,6 +57,13 @@ const addButtonsToVideos = () => {
           if (panelContent) {
             const thumbnailPreview = createThumbnailPreview(videoData);
             panelContent.appendChild(thumbnailPreview);
+
+            // Show the panel when adding items
+            const panel = document.getElementById("youtube-panel");
+            if (panel) {
+              panel.style.display = "block";
+            }
+
             thumbnailPreview.scrollIntoView({
               behavior: "smooth",
               block: "nearest",

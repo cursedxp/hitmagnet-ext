@@ -55,6 +55,7 @@ const createPanel = (user) => {
     z-index: 9999;
     color: black;
     max-height: 280px;
+    display: none;
   `;
 
   const header = createHeader(user);
@@ -105,6 +106,21 @@ const createPanel = (user) => {
   panel.appendChild(content);
 
   document.body.appendChild(panel);
+
+  // Create MutationObserver to watch for changes in panel content
+  const observer = new MutationObserver(() => {
+    const hasItems =
+      document.querySelectorAll("#panel-content .thumbnail-preview").length > 0;
+    panel.style.display = hasItems ? "block" : "none";
+  });
+
+  // Start observing the panel content
+  observer.observe(content, {
+    childList: true,
+    subtree: true,
+  });
+
+  return panel;
 };
 
 if (window.location.hostname === "www.youtube.com") {
