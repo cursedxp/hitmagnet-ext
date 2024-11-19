@@ -1,5 +1,6 @@
 import { setupVideoButtonObserver } from "./addButton";
 import { createHeader } from "./header";
+import { createImagePreview } from "./imagePreview";
 
 const checkAuthAndInitialize = async () => {
   if (document.getElementById("youtube-panel")) return;
