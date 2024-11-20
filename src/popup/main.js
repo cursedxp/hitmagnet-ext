@@ -1,7 +1,7 @@
 import "./style.css";
 import { createButton, createImage } from "../utils/helper";
 import googleIcon from "../../public/google-logo.svg";
-import { initializeGoogleAuth } from "../auth/auth";
+import { initializeGoogleAuth, getUserSubscriptionStatus } from "../auth/auth";
 
 // Constants for DOM elements and selectors
 const DOM = {
@@ -19,10 +19,27 @@ const templates = {
     </div>
   `,
 
-  userInfo: (user) => `
+  userInfo: (user, isInactive) => `
     <div class="user-info">
       <img class="user-picture" src="${user.picture}" alt="User Picture" />
       <p class="user-name">${user.name}</p>
+      ${
+        isInactive
+          ? `
+        <div class="subscription-status inactive">
+          <p>Inactive Subscription</p>
+          <button class="btn upgrade-button" onclick="window.open('YOUR_UPGRADE_URL', '_blank')">
+            Upgrade Now
+          </button>
+        </div>
+      `
+          : `
+        <div class="subscription-status active">
+          <div class="subscription-status-icon">👑</div>
+          <div>Pro</div>
+        </div>
+      `
+      }
       <button class="btn signout-button" id="signout-button">Sign out</button>
     </div>
   `,
@@ -37,8 +54,8 @@ class AuthController {
     this.container = document.querySelector(containerSelector);
   }
 
-  renderUserInfo = (user) => {
-    this.container.innerHTML = templates.userInfo(user);
+  renderUserInfo = (user, isInactive = false) => {
+    this.container.innerHTML = templates.userInfo(user, isInactive);
     document
       .querySelector(DOM.SIGNOUT_BUTTON_SELECTOR)
       .addEventListener("click", this.signOut);
@@ -58,9 +75,33 @@ class AuthController {
   };
 
   signIn = async () => {
-    const signInResult = await googleAuth.signIn();
-    if (signInResult.success) {
-      this.renderUserInfo(signInResult.user);
+    try {
+      const signInResult = await googleAuth.signIn();
+      if (signInResult.success) {
+        const subscriptionStatus = await getUserSubscriptionStatus(
+          signInResult.user.sub
+        );
+        console.log("User subscription status:", subscriptionStatus);
+
+        // Store both user and subscription status
+        await chrome.storage.local.set({
+          isAuthenticated: true,
+          user: signInResult.user,
+          subscriptionStatus: subscriptionStatus,
+        });
+
+        // You might want to show different UI based on subscription status
+        if (subscriptionStatus === "inactive") {
+          // Show upgrade prompt or limited features UI
+          this.renderUserInfo(signInResult.user, true); // Pass flag for inactive subscription
+        } else {
+          // Show full features UI
+          this.renderUserInfo(signInResult.user);
+        }
+      }
+    } catch (error) {
+      console.error("Error during sign in process:", error);
+      // Handle error in UI
     }
   };
 

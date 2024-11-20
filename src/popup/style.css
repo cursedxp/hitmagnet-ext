@@ -1,3 +1,8 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -82,4 +87,36 @@ body {
 .user-info .user-name {
   font-size: 1.2rem;
   font-weight: 700;
+}
+
+.subscription-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 16px;
+  text-align: center;
+  gap: 4px;
+}
+
+.subscription-status.active {
+  background-color: #fffde7;
+  color: #f9a825;
+}
+
+.subscription-status.inactive {
+  background-color: #fce8e6;
+  color: #c5221f;
+}
+
+.upgrade-button {
+  background-color: #1a73e8;
+  color: white;
+  margin-top: 8px;
+  font-size: 14px;
+  padding: 8px 16px;
+}
+
+.upgrade-button:hover {
+  background-color: #1557b0;
 }
