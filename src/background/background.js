@@ -60,19 +60,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Get inspirations
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "getUserInspirations") {
-    const { user } = await chrome.storage.local.get(["user"]);
-    const userId = user?.id;
-    console.log("userId", userId);
-    if (!userId) {
-      sendResponse({ inspirations: [] });
-      return;
-    }
-    const inspirations = await getUserInspirations(userId);
-    sendResponse({ inspirations });
+    (async () => {
+      try {
+        const { user } = await chrome.storage.local.get(["user"]);
+        const userId = user?.id;
+
+        if (!userId) {
+          sendResponse({ inspirations: [] });
+          return;
+        }
+
+        const inspirations = await getUserInspirations(userId);
+        sendResponse({ inspirations: inspirations || [] });
+      } catch (error) {
+        console.error("Error getting inspirations:", error);
+        sendResponse({ inspirations: [], error: error.message });
+      }
+    })();
+    return true; // Keep the message channel open for async response
   }
-  return true;
 });
 
 // Create new inspiration collection

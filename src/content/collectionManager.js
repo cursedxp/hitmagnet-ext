@@ -122,7 +122,8 @@ const getUserInspirations = async () => {
     const result = await chrome.runtime.sendMessage({
       type: "getUserInspirations",
     });
-    return result?.inspirations || [];
+    console.log("inspirations", result.inspirations);
+    return result.inspirations || [];
   } catch (error) {
     console.error("Error fetching inspirations:", error);
     return [];

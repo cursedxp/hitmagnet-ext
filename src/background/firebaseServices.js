@@ -25,7 +25,8 @@ export async function getUserInspirations(userId) {
     const userSnapshot = await getDoc(userDoc);
 
     if (userSnapshot.exists()) {
-      return userSnapshot.data().inspirations;
+      const userData = userSnapshot.data();
+      return userData.inspirations || [];
     } else {
       console.log("No such document for user:", userId);
       return [];
