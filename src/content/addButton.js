@@ -38,11 +38,10 @@ const addButtonsToVideos = () => {
           "ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-playlist-video-renderer, ytd-compact-video-renderer"
         );
         const videoLink = videoContainer?.querySelector("a#thumbnail");
-        const videoId = videoLink?.href?.split("v=")[1]?.split("&")[0];
+        const videoId = videoLink?.href?.split("v=")?.[1]?.split("&")?.[0];
 
         if (videoId) {
           const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-
           const videoData = {
             title: videoContainer
               .querySelector("#video-title")
@@ -53,29 +52,53 @@ const addButtonsToVideos = () => {
               ?.textContent?.trim(),
           };
 
+          console.log("Adding video:", videoData);
+
           const panelContent = document.querySelector("#panel-content");
           if (panelContent) {
             const thumbnailPreview = createThumbnailPreview(videoData);
             panelContent.appendChild(thumbnailPreview);
 
-            // Show the panel when adding items
+            // Explicitly show the panel
             const panel = document.getElementById("youtube-panel");
             if (panel) {
               panel.style.display = "block";
+              console.log("Panel should be visible now");
+            } else {
+              console.error("Panel element not found");
             }
 
+            // Scroll the new item into view
             thumbnailPreview.scrollIntoView({
               behavior: "smooth",
               block: "nearest",
               inline: "end",
             });
+          } else {
+            console.error("Panel content element not found");
           }
 
-          chrome.runtime.sendMessage({
-            type: "addVideo",
-            videoId,
-            videoData,
-          });
+          try {
+            chrome.runtime.sendMessage(
+              {
+                type: "addVideo",
+                videoId,
+                videoData,
+              },
+              (response) => {
+                if (chrome.runtime.lastError) {
+                  console.error(
+                    "Error sending message:",
+                    chrome.runtime.lastError
+                  );
+                  return;
+                }
+                console.log("Video added successfully:", response);
+              }
+            );
+          } catch (error) {
+            console.error("Error in add button click handler:", error);
+          }
         }
       });
 
@@ -93,3 +116,14 @@ const setupVideoButtonObserver = () => {
 };
 
 export { setupVideoButtonObserver };
+
+const createAddButton = () => {
+  const button = document.createElement("button");
+  button.className = "add-to-collection-btn";
+  button.innerHTML = "+";
+
+  // Add this to verify button creation
+  console.log("Add button created");
+
+  return button;
+};
