@@ -95,37 +95,47 @@ const createPanel = (user) => {
     navigationContainer.style.cssText = `
       display: flex;
       justify-content: space-between;
+      align-items: center;
       width: 100%;
       margin-bottom: 16px;
+      gap: 8px;
     `;
+
     const buttonsContainer = document.createElement("div");
+    buttonsContainer.id = "buttons-container";
     buttonsContainer.style.cssText = `
       display: flex;
       justify-content: flex-end;
-      width: 100%;
       gap: 8px;
-      margin-bottom: 16px;
+      margin-left: auto;
     `;
 
-    buttonsContainer.appendChild(createDownloadAllButton());
-    buttonsContainer.appendChild(createRemoveAllButton());
+    const downloadAllBtn = createDownloadAllButton();
+    const removeAllBtn = createRemoveAllButton();
 
-    // Only show collection manager if subscription is active
-    console.log("subscriptionStatus", result.subscriptionStatus);
+    // Set initial visibility based on content
+    const hasItems =
+      document.querySelectorAll("#panel-content .thumbnail-preview").length > 0;
+    downloadAllBtn.style.display = hasItems ? "flex" : "none";
+    removeAllBtn.style.display = hasItems ? "flex" : "none";
+
+    buttonsContainer.appendChild(downloadAllBtn);
+    buttonsContainer.appendChild(removeAllBtn);
+
+    // First append buttonsContainer
+    navigationContainer.appendChild(buttonsContainer);
+
+    // Then append collection manager if subscription is active
     if (result.subscriptionStatus !== "inactive") {
       try {
         const collectionManager = await createCollectionManager();
         if (collectionManager) {
-          navigationContainer.appendChild(collectionManager);
-        } else {
-          console.error("Collection manager creation failed");
+          navigationContainer.insertBefore(collectionManager, buttonsContainer);
         }
       } catch (error) {
         console.error("Error creating collection manager:", error);
       }
     }
-
-    navigationContainer.appendChild(buttonsContainer);
 
     panel.appendChild(header);
     panel.appendChild(navigationContainer);
@@ -147,6 +157,27 @@ const createPanel = (user) => {
       childList: true,
       subtree: true,
     });
+
+    // Add observer for buttons visibility
+    const buttonsObserver = new MutationObserver(() => {
+      const hasItems =
+        document.querySelectorAll("#panel-content .thumbnail-preview").length >
+        0;
+      const downloadBtn = document.querySelector(".download-all-btn");
+      const removeBtn = document.querySelector(".remove-all-btn");
+
+      if (downloadBtn) downloadBtn.style.display = hasItems ? "flex" : "none";
+      if (removeBtn) removeBtn.style.display = hasItems ? "flex" : "none";
+    });
+
+    // Start observing the panel content
+    const panelContent = document.querySelector("#panel-content");
+    if (panelContent) {
+      buttonsObserver.observe(panelContent, {
+        childList: true,
+        subtree: true,
+      });
+    }
 
     return panel;
   });
