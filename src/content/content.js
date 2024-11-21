@@ -111,9 +111,11 @@ const createPanel = (user) => {
     buttonsContainer.appendChild(createRemoveAllButton());
 
     // Only show collection manager if subscription is active
-    if (result.subscriptionStatus !== "inactive") {
-      navigationContainer.appendChild(createCollectionManager());
-    }
+    chrome.storage.local.get(["subscriptionStatus"], (result) => {
+      if (result.subscriptionStatus !== "inactive") {
+        navigationContainer.appendChild(createCollectionManager());
+      }
+    });
     navigationContainer.appendChild(buttonsContainer);
 
     panel.appendChild(header);
@@ -122,12 +124,13 @@ const createPanel = (user) => {
 
     document.body.appendChild(panel);
 
-    // Create MutationObserver to watch for changes in panel content
+    // Add this observer to handle panel visibility
     const observer = new MutationObserver(() => {
       const hasItems =
         document.querySelectorAll("#panel-content .thumbnail-preview").length >
         0;
       panel.style.display = hasItems ? "block" : "none";
+      console.log("Panel visibility updated:", hasItems ? "showing" : "hidden");
     });
 
     // Start observing the panel content
