@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../config/firebase";
-
+import { v4 as uuidv4 } from "uuid";
 export async function getUserSubscriptionStatus(userId) {
   try {
     const userDoc = doc(db, "users", userId);
@@ -42,6 +42,7 @@ export async function createNewInspirationCollection(userId, collectionName) {
   if (userSnapshot.exists()) {
     const userData = userSnapshot.data();
     userData.inspirations.push({
+      id: uuidv4(),
       name: collectionName,
       thumbnails: [],
       createdAt: new Date(),
