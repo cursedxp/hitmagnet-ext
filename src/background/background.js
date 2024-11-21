@@ -99,3 +99,21 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     sendResponse({ success: true, newCollection });
   }
 });
+
+// Update inspiration collection
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  if (message.type === "updateInspirationCollection") {
+    const { user } = await chrome.storage.local.get(["user"]);
+    const userId = user?.id;
+    if (!userId) {
+      sendResponse({ success: false, error: "User not authenticated" });
+      return;
+    }
+    const success = await updateInspirationCollection(
+      userId,
+      message.collectionId,
+      message.thumbnails
+    );
+    sendResponse({ success });
+  }
+});

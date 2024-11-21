@@ -55,3 +55,24 @@ export async function createNewInspirationCollection(userId, collectionName) {
     return null;
   }
 }
+export async function updateInspirationCollection(
+  userId,
+  collectionId,
+  thumbnails
+) {
+  const userDoc = doc(db, "users", userId);
+  const userSnapshot = await getDoc(userDoc);
+  if (userSnapshot.exists()) {
+    const userData = userSnapshot.data();
+    const collection = userData.inspirations.find((c) => c.id === collectionId);
+    if (collection) {
+      collection.thumbnails = [...collection.thumbnails, ...thumbnails];
+      collection.updatedAt = new Date();
+      await setDoc(userDoc, userData);
+      return true;
+    } else {
+      console.log("Collection not found:", collectionId);
+      return false;
+    }
+  }
+}
