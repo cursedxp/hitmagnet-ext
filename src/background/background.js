@@ -1,6 +1,7 @@
 import {
   getUserInspirations,
   getUserSubscriptionStatus,
+  createNewInspirationCollection,
 } from "./firebaseServices";
 
 // Set default values for storage before authentication
@@ -17,22 +18,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     const userId = sender.tab ? sender.tab.userId : null;
     const subscriptionStatus = await getUserSubscriptionStatus(userId);
     sendResponse({ subscriptionStatus });
-  }
-  return true;
-});
-
-// Get inspirations
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-  if (message.type === "getUserInspirations") {
-    const { user } = await chrome.storage.local.get(["user"]);
-    const userId = user?.id;
-    console.log("userId", userId);
-    if (!userId) {
-      sendResponse({ inspirations: [] });
-      return;
-    }
-    const inspirations = await getUserInspirations(userId);
-    sendResponse({ inspirations });
   }
   return true;
 });
@@ -71,5 +56,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
 
     return true; // Keep message channel open for async response
+  }
+});
+
+// Get inspirations
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  if (message.type === "getUserInspirations") {
+    const { user } = await chrome.storage.local.get(["user"]);
+    const userId = user?.id;
+    console.log("userId", userId);
+    if (!userId) {
+      sendResponse({ inspirations: [] });
+      return;
+    }
+    const inspirations = await getUserInspirations(userId);
+    sendResponse({ inspirations });
+  }
+  return true;
+});
+
+// Create new inspiration collection
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+  if (message.type === "createNewInspirationCollection") {
+    const { user } = await chrome.storage.local.get(["user"]);
+    const userId = user?.id;
+    if (!userId) {
+      sendResponse({ success: false, error: "User not authenticated" });
+      return;
+    }
+    const newCollection = await createNewInspirationCollection(
+      userId,
+      message.collectionName
+    );
+    sendResponse({ success: true, newCollection });
   }
 });
