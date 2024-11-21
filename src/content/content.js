@@ -41,7 +41,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 const createPanel = (user) => {
   // Get subscription status from storage
-  chrome.storage.local.get(["subscriptionStatus"], (result) => {
+  chrome.storage.local.get(["subscriptionStatus"], async (result) => {
     const panel = document.createElement("div");
     panel.id = "youtube-panel";
     panel.style.cssText = `
@@ -111,11 +111,20 @@ const createPanel = (user) => {
     buttonsContainer.appendChild(createRemoveAllButton());
 
     // Only show collection manager if subscription is active
-    chrome.storage.local.get(["subscriptionStatus"], (result) => {
-      if (result.subscriptionStatus !== "inactive") {
-        navigationContainer.appendChild(createCollectionManager());
+    console.log("subscriptionStatus", result.subscriptionStatus);
+    if (result.subscriptionStatus !== "inactive") {
+      try {
+        const collectionManager = await createCollectionManager();
+        if (collectionManager) {
+          navigationContainer.appendChild(collectionManager);
+        } else {
+          console.error("Collection manager creation failed");
+        }
+      } catch (error) {
+        console.error("Error creating collection manager:", error);
       }
-    });
+    }
+
     navigationContainer.appendChild(buttonsContainer);
 
     panel.appendChild(header);
