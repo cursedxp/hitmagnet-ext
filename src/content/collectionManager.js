@@ -74,32 +74,38 @@ export const createCollectionManager = async () => {
       if (selectors.value === "new") {
         const collectionName = prompt("Enter collection name:");
         if (collectionName) {
-          const newCollection = await chrome.runtime.sendMessage({
+          const response = await chrome.runtime.sendMessage({
             type: "createNewInspirationCollection",
             collectionName,
           });
-          if (newCollection) {
-            const option = document.createElement("option");
-            option.value = newCollection.id;
-            option.textContent = collectionName;
 
-            // Insert the new option before the "Create New Collection" option
-            selectors.insertBefore(option, newCollectionOption);
-            selectors.value = option.value;
+          if (response.success && response.newCollection) {
+            // Fetch updated inspirations
+            const updatedInspirations = await getUserInspirations();
 
-            uploadButton.style.opacity = "1";
-            uploadButton.style.pointerEvents = "auto";
+            // Clear existing options except default and "new collection"
+            while (selectors.children.length > 2) {
+              selectors.removeChild(selectors.children[1]);
+            }
+
+            // Add all collections again
+            updatedInspirations.forEach((inspiration) => {
+              const option = document.createElement("option");
+              option.value = inspiration.id;
+              option.textContent = inspiration.name;
+              selectors.insertBefore(option, newCollectionOption);
+            });
+
+            // Select the newly created collection
+            selectors.value = response.newCollection.id;
+            selectors.dispatchEvent(new Event("change"));
           } else {
-            selectors.value = ""; // Reset to default if user cancels
-            uploadButton.style.opacity = "0.5";
-            uploadButton.style.pointerEvents = "none";
+            selectors.value = ""; // Reset to default if creation fails
+            selectors.dispatchEvent(new Event("change"));
           }
-        } else if (selectors.value) {
-          uploadButton.style.opacity = "1";
-          uploadButton.style.pointerEvents = "auto";
         } else {
-          uploadButton.style.opacity = "0.5";
-          uploadButton.style.pointerEvents = "none";
+          selectors.value = ""; // Reset if user cancels prompt
+          selectors.dispatchEvent(new Event("change"));
         }
       }
     });

@@ -85,19 +85,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Create new inspiration collection
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "createNewInspirationCollection") {
-    const { user } = await chrome.storage.local.get(["user"]);
-    const userId = user?.id;
-    if (!userId) {
-      sendResponse({ success: false, error: "User not authenticated" });
-      return;
-    }
-    const newCollection = await createNewInspirationCollection(
-      userId,
-      message.collectionName
-    );
-    sendResponse({ success: true, newCollection });
+    (async () => {
+      try {
+        const { user } = await chrome.storage.local.get(["user"]);
+        const userId = user?.id;
+        if (!userId) {
+          sendResponse({ success: false, error: "User not authenticated" });
+          return;
+        }
+        const newCollection = await createNewInspirationCollection(
+          userId,
+          message.collectionName
+        );
+        sendResponse({ success: true, newCollection });
+      } catch (error) {
+        console.error("Error creating collection:", error);
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Keep the message channel open for async response
   }
 });
 
