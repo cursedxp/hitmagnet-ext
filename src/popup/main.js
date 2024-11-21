@@ -1,7 +1,8 @@
 import "./style.css";
 import { createButton, createImage } from "../utils/helper";
 import googleIcon from "../../public/google-logo.svg";
-import { initializeGoogleAuth, getUserSubscriptionStatus } from "../auth/auth";
+import { initializeGoogleAuth } from "../auth/auth";
+import { getUserSubscriptionStatus } from "../services/firebaseServices";
 
 // Constants for DOM elements and selectors
 const DOM = {
