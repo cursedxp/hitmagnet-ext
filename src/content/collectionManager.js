@@ -63,6 +63,14 @@ export const createCollectionManager = async () => {
 
     // Event Handlers
     selectors.addEventListener("change", async () => {
+      if (selectors.value && selectors.value !== "new") {
+        uploadButton.style.opacity = "1";
+        uploadButton.style.pointerEvents = "auto";
+      } else if (selectors.value === "") {
+        uploadButton.style.opacity = "0.5";
+        uploadButton.style.pointerEvents = "none";
+      }
+
       if (selectors.value === "new") {
         const collectionName = prompt("Enter collection name:");
         if (collectionName) {
@@ -93,6 +101,47 @@ export const createCollectionManager = async () => {
           uploadButton.style.opacity = "0.5";
           uploadButton.style.pointerEvents = "none";
         }
+      }
+    });
+
+    // Add upload button click handler
+    uploadButton.addEventListener("click", async () => {
+      const selectedCollectionId = selectors.value;
+      if (!selectedCollectionId) return;
+
+      // Get all thumbnail previews from the panel
+      const thumbnailPreviews = document.querySelectorAll(
+        "#panel-content .thumbnail-preview"
+      );
+      const thumbnails = Array.from(thumbnailPreviews).map((preview) => {
+        const img = preview.querySelector("img");
+        return {
+          url: img.src,
+          addedAt: new Date(),
+        };
+      });
+
+      if (thumbnails.length === 0) return;
+
+      try {
+        const response = await chrome.runtime.sendMessage({
+          type: "updateInspirationCollection",
+          collectionId: selectedCollectionId,
+          thumbnails,
+        });
+
+        if (response.success) {
+          // Clear the panel after successful upload
+          const panelContent = document.querySelector("#panel-content");
+          panelContent.innerHTML = "";
+
+          // Reset the selector and upload button
+          selectors.value = "";
+          uploadButton.style.opacity = "0.5";
+          uploadButton.style.pointerEvents = "none";
+        }
+      } catch (error) {
+        console.error("Error uploading thumbnails:", error);
       }
     });
 

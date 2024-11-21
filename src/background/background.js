@@ -2,6 +2,7 @@ import {
   getUserInspirations,
   getUserSubscriptionStatus,
   createNewInspirationCollection,
+  updateInspirationCollection,
 } from "./firebaseServices";
 
 // Set default values for storage before authentication
@@ -101,19 +102,27 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 });
 
 // Update inspiration collection
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "updateInspirationCollection") {
-    const { user } = await chrome.storage.local.get(["user"]);
-    const userId = user?.id;
-    if (!userId) {
-      sendResponse({ success: false, error: "User not authenticated" });
-      return;
-    }
-    const success = await updateInspirationCollection(
-      userId,
-      message.collectionId,
-      message.thumbnails
-    );
-    sendResponse({ success });
+    (async () => {
+      try {
+        const { user } = await chrome.storage.local.get(["user"]);
+        const userId = user?.id;
+        if (!userId) {
+          sendResponse({ success: false, error: "User not authenticated" });
+          return;
+        }
+        const success = await updateInspirationCollection(
+          userId,
+          message.collectionId,
+          message.thumbnails
+        );
+        sendResponse({ success });
+      } catch (error) {
+        console.error("Error updating collection:", error);
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Keep the message channel open for async response
   }
 });
