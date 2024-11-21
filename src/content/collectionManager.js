@@ -1,4 +1,6 @@
-export const createCollectionManager = () => {
+export const createCollectionManager = async () => {
+  const inspirations = await getUserInspirations();
+
   const collectionManager = document.createElement("div");
   collectionManager.style.cssText = `
     display: flex;
@@ -97,15 +99,12 @@ export const createCollectionManager = () => {
   });
 
   // Load existing collections
-  chrome.storage.local.get(["collections"], (result) => {
-    const collections = result.collections || [];
-    collections.forEach((collection) => {
-      const option = document.createElement("option");
-      option.value = collection.id;
-      option.textContent = collection.name;
-      // Insert before the "Create New Collection" option
-      selectors.insertBefore(option, newCollectionOption);
-    });
+  inspirations.forEach((inspiration) => {
+    const option = document.createElement("option");
+    option.value = inspiration.id;
+    option.textContent = inspiration.name;
+    // Insert before the "Create New Collection" option
+    selectors.insertBefore(option, newCollectionOption);
   });
 
   // Append elements
@@ -114,4 +113,16 @@ export const createCollectionManager = () => {
   collectionManager.id = "collection-manager";
 
   return collectionManager;
+};
+
+const getUserInspirations = async () => {
+  try {
+    const result = await chrome.runtime.sendMessage({
+      type: "getUserInspirations",
+    });
+    return result?.inspirations || [];
+  } catch (error) {
+    console.error("Error fetching inspirations:", error);
+    return [];
+  }
 };
