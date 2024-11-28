@@ -3,6 +3,7 @@ import { createButton, createImage } from "../utils/helper";
 import googleIcon from "../../public/google-logo.svg";
 import { initializeGoogleAuth } from "../auth/auth";
 import { getUserSubscriptionStatus } from "../background/firebaseServices";
+import authHandlers from "../auth/authHandlers";
 
 // Constants for DOM elements and selectors
 const DOM = {
@@ -48,7 +49,7 @@ const templates = {
 
 // Initialize Google Auth
 const googleAuth = initializeGoogleAuth();
-
+const auth = authHandlers();
 // Main authentication controller
 class AuthController {
   constructor(containerSelector) {
@@ -77,28 +78,13 @@ class AuthController {
 
   signIn = async () => {
     try {
-      const signInResult = await googleAuth.signIn();
-      if (signInResult.success) {
-        const subscriptionStatus = await getUserSubscriptionStatus(
-          signInResult.user.sub
-        );
-        console.log("User subscription status:", subscriptionStatus);
+      const signInResult = await auth.signIn();
+      console.log("Sign in result:", signInResult);
 
-        // Store both user and subscription status
-        await chrome.storage.local.set({
-          isAuthenticated: true,
-          user: signInResult.user,
-          subscriptionStatus: subscriptionStatus,
-        });
-
-        // You might want to show different UI based on subscription status
-        if (subscriptionStatus === "inactive") {
-          // Show upgrade prompt or limited features UI
-          this.renderUserInfo(signInResult.user, true); // Pass flag for inactive subscription
-        } else {
-          // Show full features UI
-          this.renderUserInfo(signInResult.user);
-        }
+      if (signInResult.subscriptionStatus === "inactive") {
+        this.renderUserInfo(signInResult.user, true);
+      } else {
+        this.renderUserInfo(signInResult.user);
       }
     } catch (error) {
       console.error("Error during sign in process:", error);
@@ -107,7 +93,7 @@ class AuthController {
   };
 
   signOut = async () => {
-    await googleAuth.signOut();
+    await auth.signOut();
     this.renderSignInButton();
   };
 }
