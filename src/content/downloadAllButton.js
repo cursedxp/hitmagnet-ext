@@ -20,17 +20,22 @@ export const createDownloadAllButton = () => {
     display: none;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
-    
-    &:hover {
-      background: #0056bf;
-    }
 
     svg {
       width: 16px;
       height: 16px;
     }
   `;
+
+  button.addEventListener("mouseenter", () => {
+    button.style.background = "#e4e4e4";
+    button.style.color = "black";
+  });
+
+  button.addEventListener("mouseleave", () => {
+    button.style.background = "white";
+    button.style.color = "black";
+  });
 
   // Create MutationObserver to watch for changes in panel content
   const observer = new MutationObserver(() => {

@@ -59,7 +59,7 @@ const createPanel = (user) => {
       width: 680px;
       background: white;
       padding: 16px;
-      border-radius: 8px;
+      border-radius: 16px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       z-index: 9999;
       color: black;

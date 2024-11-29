@@ -59,7 +59,7 @@ export const createPricingRedirect = () => {
     text-decoration: none;
     border-radius: 6px;
     font-weight: 600;
-    font-size: 0.9em;
+    font-size: 1em;
     white-space: nowrap;
     transition: all 0.2s ease;
 

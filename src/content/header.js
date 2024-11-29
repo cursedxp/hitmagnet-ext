@@ -3,7 +3,7 @@ const createHeader = (user) => {
   header.style.cssText = `
     padding: 8px;
     background: #f0f0f0;
-    border-radius: 8px 8px 0 0;
+    border-radius: 16px 16px 0 0;
     display: flex;
     align-items: center;
     justify-content: space-between;

@@ -15,18 +15,23 @@ export const createRemoveAllButton = () => {
       display: none;
       align-items: center;
       gap: 8px;
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.2);
-      
-      &:hover {
-        background: #ff4444;
-        color: white;
-      }
   
       svg {
         width: 16px;
         height: 16px;
       }
     `;
+
+  // Add hover effect with event listeners
+  button.addEventListener("mouseenter", () => {
+    button.style.background = "#e4e4e4";
+    button.style.color = "black";
+  });
+
+  button.addEventListener("mouseleave", () => {
+    button.style.background = "white";
+    button.style.color = "black";
+  });
 
   const handleRemoveAll = () => {
     const previewCards = document.querySelectorAll(
