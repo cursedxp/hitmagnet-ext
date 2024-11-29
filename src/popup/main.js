@@ -30,7 +30,7 @@ const templates = {
           ? `
         <div class="subscription-status inactive">
           <p>Inactive Subscription</p>
-          <button class="btn upgrade-button" onclick="window.open('YOUR_UPGRADE_URL', '_blank')">
+          <button class="btn upgrade-button" onclick="window.open('https://www.hitmagnet.app/', '_blank')">
             Upgrade Now
           </button>
         </div>
