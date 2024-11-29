@@ -22,17 +22,23 @@ const checkAuthAndInitialize = async () => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "authStateChanged") {
     const panel = document.getElementById("youtube-panel");
+    const buttons = document.querySelectorAll(".custom-button");
 
     if (message.isAuthenticated && message.user) {
+      // User is authenticated
       if (panel) panel.remove();
       createPanel(message.user);
       setupVideoButtonObserver();
     } else {
+      // User is not authenticated
       if (panel) panel.remove();
-      // Remove buttons when logged out
-      document
-        .querySelectorAll(".custom-button")
-        .forEach((btn) => btn.remove());
+      buttons.forEach((btn) => btn.remove());
+
+      // Stop the observer if it exists
+      if (window.videoButtonObserver) {
+        window.videoButtonObserver.disconnect();
+        window.videoButtonObserver = null;
+      }
     }
   }
   sendResponse({ success: true });

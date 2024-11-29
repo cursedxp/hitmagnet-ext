@@ -2,6 +2,29 @@ import { getUserInfo } from "./userUtils";
 import { getUserSubscriptionStatus } from "../background/firebaseServices";
 
 export default function authHandlers() {
+  const sendMessageToTabs = async (message) => {
+    try {
+      const tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
+      for (const tab of tabs) {
+        try {
+          await new Promise((resolve, reject) => {
+            chrome.tabs.sendMessage(tab.id, message, (response) => {
+              if (chrome.runtime.lastError) {
+                // Ignore the error and resolve anyway
+                resolve();
+              } else {
+                resolve(response);
+              }
+            });
+          });
+        } catch (err) {
+          console.log(`Error sending message to tab ${tab.id}:`, err);
+        }
+      }
+    } catch (err) {
+      console.error("Error querying tabs:", err);
+    }
+  };
   return {
     signIn: async () => {
       try {
@@ -62,6 +85,12 @@ export default function authHandlers() {
         };
 
         await chrome.storage.local.set({
+          isAuthenticated: true,
+          user: userData,
+        });
+
+        await sendMessageToTabs({
+          type: "authStateChanged",
           isAuthenticated: true,
           user: userData,
         });
