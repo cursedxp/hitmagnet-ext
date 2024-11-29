@@ -109,24 +109,21 @@ export default function authHandlers() {
     },
     signOut: async () => {
       try {
-        await chrome.runtime.sendMessage({
-          type: "authStateChanged",
+        // Clear cached tokens first
+        await new Promise((resolve) => {
+          chrome.identity.clearAllCachedAuthTokens(resolve);
+        });
+
+        // Clear local storage
+        chrome.storage.local.set({
           isAuthenticated: false,
           user: null,
         });
 
-        await chrome.storage.local.set({
-          isAuthenticated: false,
-          user: null,
-        });
-
-        return { success: true };
+        return true;
       } catch (error) {
-        console.error("Sign out error:", error);
-        return {
-          success: false,
-          error: error.message,
-        };
+        console.error("Error during sign out:", error);
+        throw error;
       }
     },
 
