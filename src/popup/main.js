@@ -54,7 +54,6 @@ const templates = {
         </div>
       </div>
       <button class="btn signout-button" id="signout-button">
-        <span class="signout-icon">⟲</span>
         Sign out
       </button>
     </div>
