@@ -39,7 +39,7 @@ const addButtonsToVideos = () => {
           cursor: pointer;
         `;
 
-        button.addEventListener("click", (e) => {
+        button.addEventListener("click", async (e) => {
           e.preventDefault();
           e.stopPropagation();
 
@@ -73,8 +73,6 @@ const addButtonsToVideos = () => {
               if (panel) {
                 panel.style.display = "block";
                 console.log("Panel should be visible now");
-              } else {
-                console.error("Panel element not found");
               }
 
               // Scroll the new item into view
@@ -83,30 +81,54 @@ const addButtonsToVideos = () => {
                 block: "nearest",
                 inline: "end",
               });
-            } else {
-              console.error("Panel content element not found");
-            }
 
-            try {
-              chrome.runtime.sendMessage(
-                {
-                  type: "addVideo",
-                  videoId,
-                  videoData,
-                },
-                (response) => {
-                  if (chrome.runtime.lastError) {
-                    console.error(
-                      "Error sending message:",
-                      chrome.runtime.lastError
-                    );
-                    return;
+              // Add retry logic for sending message to background script
+              const MAX_RETRIES = 3;
+              let retryCount = 0;
+
+              while (retryCount < MAX_RETRIES) {
+                try {
+                  // Check if chrome.runtime is still available
+                  if (!chrome.runtime) {
+                    throw new Error("Chrome runtime not available");
                   }
+
+                  const response = await new Promise((resolve, reject) => {
+                    chrome.runtime.sendMessage(
+                      {
+                        type: "addVideo",
+                        videoId,
+                        videoData,
+                      },
+                      (response) => {
+                        if (chrome.runtime.lastError) {
+                          reject(chrome.runtime.lastError);
+                        } else {
+                          resolve(response);
+                        }
+                      }
+                    );
+                  });
+
                   console.log("Video added successfully:", response);
+                  break; // Success, exit the retry loop
+                } catch (error) {
+                  retryCount++;
+                  console.warn(`Attempt ${retryCount} failed:`, error);
+
+                  if (retryCount === MAX_RETRIES) {
+                    console.error(
+                      "Max retries reached. Video may not be saved."
+                    );
+                    // Consider showing a user-friendly error message here
+                  } else {
+                    // Wait before retrying (exponential backoff)
+                    await new Promise((resolve) =>
+                      setTimeout(resolve, Math.pow(2, retryCount) * 1000)
+                    );
+                  }
                 }
-              );
-            } catch (error) {
-              console.error("Error in add button click handler:", error);
+              }
             }
           }
         });
