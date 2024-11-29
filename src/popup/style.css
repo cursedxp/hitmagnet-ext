@@ -29,11 +29,18 @@ a:hover {
 
 body {
   margin: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   place-items: center;
   min-width: 300px;
   min-height: 300px;
   padding: 20px;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
 }
 
 .container {
@@ -77,45 +84,223 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  width: 100%;
+  max-width: 320px;
+  padding: 16px;
+  background: #ffffff0d;
+  border-radius: 12px;
+  gap: 16px;
 }
+
+.user-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .user-info .user-picture {
   width: 48px;
   height: 48px;
   border-radius: 50%;
+  border: 2px solid #ffffff1a;
 }
+
+.user-details {
+  flex: 1;
+  text-align: left;
+}
+
 .user-info .user-name {
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #fff;
 }
 
 .subscription-status {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  border-radius: 16px;
-  text-align: center;
-  gap: 4px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .subscription-status.active {
-  background-color: #fffde7;
-  color: #f9a825;
-}
-
-.subscription-status.inactive {
   background-color: transparent;
 }
 
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #ffd70020;
+  color: #ffd700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.status-icon {
+  margin-right: 4px;
+}
+
+.status-text {
+  color: #999;
+  font-size: 0.9rem;
+}
+
 .upgrade-button {
-  background-color: #1a73e8;
-  color: white;
-  margin-top: 8px;
-  font-size: 14px;
-  padding: 8px 16px;
+  background-color: #ffd700;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
 .upgrade-button:hover {
-  background-color: #1557b0;
+  background-color: #ffed4a;
+  transform: translateY(-1px);
+}
+
+.signout-button {
+  background-color: #ffffff0d;
+  color: #fff;
+  font-size: 0.9rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.signout-button:hover {
+  background-color: #ffffff1a;
+}
+
+.app-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.app-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(45deg, #ffd700, #ffed4a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+}
+
+.app-subtitle {
+  font-size: 0.9rem;
+  color: #999;
+  margin-top: 4px;
+  text-align: center;
+}
+
+.status-message {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1000;
+}
+
+.status-message.info {
+  background-color: #0288d1;
+  color: white;
+  opacity: 1;
+}
+
+.status-message.success {
+  background-color: #2e7d32;
+  color: white;
+  opacity: 1;
+}
+
+.status-message.error {
+  background-color: #d32f2f;
+  color: white;
+  opacity: 1;
+}
+
+/* Loading states */
+.btn.loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.btn.loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Transitions */
+.container > * {
+  transition: all 0.3s ease;
+}
+
+/* Responsive improvements */
+@media (max-width: 360px) {
+  body {
+    padding: 16px;
+  }
+
+  .user-info {
+    padding: 12px;
+  }
+
+  .app-header h1 {
+    font-size: 1.3rem;
+  }
+}
+
+/* Accessibility improvements */
+.btn:focus-visible {
+  outline: 2px solid #ffd700;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }

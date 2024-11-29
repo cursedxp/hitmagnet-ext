@@ -16,32 +16,47 @@ const DOM = {
 const templates = {
   mainContainer: () => `
     <div class="container">
-      <h1>HitMagnet Thumbnail Collector</h1>
+      <div class="app-header">
+        <img src="icon-48.png" alt="HitMagnet Logo" class="app-logo" />
+        <h1>HitMagnet</h1>
+        <span class="app-subtitle">Thumbnail Collector</span>
+      </div>
       <div id="signin-container"></div>
+      <div id="status-message" class="status-message"></div>
     </div>
   `,
 
   userInfo: (user, isInactive) => `
     <div class="user-info">
-      <img class="user-picture" src="${user.picture}" alt="User Picture" />
-      <p class="user-name">${user.name}</p>
-      ${
-        isInactive
-          ? `
-        <div class="subscription-status inactive">
-          <button class="btn upgrade-button" onclick="window.open('https://www.hitmagnet.app/', '_blank')">
-            Upgrade Now
-          </button>
+      <div class="user-header">
+        <img class="user-picture" src="${user.picture}" alt="User Picture" />
+        <div class="user-details">
+          <p class="user-name">${user.name}</p>
+          ${
+            isInactive
+              ? `
+            <div class="subscription-status inactive">
+              <span class="status-text">Free Plan</span>
+              <button class="btn upgrade-button" onclick="window.open('https://www.hitmagnet.app/', '_blank')">
+                Upgrade to Pro
+              </button>
+            </div>
+          `
+              : `
+            <div class="subscription-status active">
+              <span class="status-badge">
+                <span class="status-icon">✓</span>
+                Pro
+              </span>
+            </div>
+          `
+          }
         </div>
-      `
-          : `
-        <div class="subscription-status active">
-          <div class="subscription-status-icon"></div>
-          <div>Pro</div>
-        </div>
-      `
-      }
-      <button class="btn signout-button" id="signout-button">Sign out</button>
+      </div>
+      <button class="btn signout-button" id="signout-button">
+        <span class="signout-icon">⟲</span>
+        Sign out
+      </button>
     </div>
   `,
 };
@@ -53,6 +68,7 @@ const auth = authHandlers();
 class AuthController {
   constructor(containerSelector) {
     this.container = document.querySelector(containerSelector);
+    this.statusMessage = document.querySelector("#status-message");
   }
 
   renderUserInfo = (user, isInactive = false) => {
@@ -75,25 +91,42 @@ class AuthController {
     );
   };
 
+  showStatusMessage = (message, type = "info") => {
+    this.statusMessage.textContent = message;
+    this.statusMessage.className = `status-message ${type}`;
+    setTimeout(() => {
+      this.statusMessage.className = "status-message";
+      this.statusMessage.textContent = "";
+    }, 3000);
+  };
+
   signIn = async () => {
     try {
+      this.showStatusMessage("Signing in...", "info");
       const signInResult = await auth.signIn();
-      console.log("Sign in result:", signInResult);
 
       if (signInResult.subscriptionStatus === "active") {
+        this.showStatusMessage("Welcome back!", "success");
         this.renderUserInfo(signInResult.user);
       } else {
         this.renderUserInfo(signInResult.user, true);
       }
     } catch (error) {
       console.error("Error during sign in process:", error);
-      // Handle error in UI
+      this.showStatusMessage("Sign in failed. Please try again.", "error");
     }
   };
 
   signOut = async () => {
-    await auth.signOut();
-    this.renderSignInButton();
+    try {
+      this.showStatusMessage("Signing out...", "info");
+      await auth.signOut();
+      this.showStatusMessage("Signed out successfully", "success");
+      this.renderSignInButton();
+    } catch (error) {
+      console.error("Error during sign out:", error);
+      this.showStatusMessage("Sign out failed. Please try again.", "error");
+    }
   };
 }
 
