@@ -29,7 +29,6 @@ const templates = {
         isInactive
           ? `
         <div class="subscription-status inactive">
-          <p>Inactive Subscription</p>
           <button class="btn upgrade-button" onclick="window.open('https://www.hitmagnet.app/', '_blank')">
             Upgrade Now
           </button>
@@ -37,7 +36,7 @@ const templates = {
       `
           : `
         <div class="subscription-status active">
-          <div class="subscription-status-icon">👑</div>
+          <div class="subscription-status-icon"></div>
           <div>Pro</div>
         </div>
       `
@@ -81,10 +80,10 @@ class AuthController {
       const signInResult = await auth.signIn();
       console.log("Sign in result:", signInResult);
 
-      if (signInResult.subscriptionStatus === "inactive") {
-        this.renderUserInfo(signInResult.user, true);
-      } else {
+      if (signInResult.subscriptionStatus === "active") {
         this.renderUserInfo(signInResult.user);
+      } else {
+        this.renderUserInfo(signInResult.user, true);
       }
     } catch (error) {
       console.error("Error during sign in process:", error);

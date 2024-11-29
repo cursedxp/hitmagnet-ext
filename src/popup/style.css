@@ -105,8 +105,7 @@ body {
 }
 
 .subscription-status.inactive {
-  background-color: #fce8e6;
-  color: #c5221f;
+  background-color: transparent;
 }
 
 .upgrade-button {
