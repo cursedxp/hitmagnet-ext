@@ -48,7 +48,6 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  text-align: center;
 }
 
 .btn {
@@ -272,6 +271,8 @@ body {
 
 /* Transitions */
 .container > * {
+  display: flex;
+  justify-content: center;
   transition: all 0.3s ease;
 }
 
