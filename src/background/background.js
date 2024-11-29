@@ -134,3 +134,95 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // Keep the message channel open for async response
   }
 });
+
+// Add this function to handle auth state updates
+const updateAuthState = async (authState) => {
+  const { isAuthenticated, user } = authState;
+
+  // Update local storage
+  await chrome.storage.local.set({
+    isAuthenticated,
+    user,
+  });
+
+  // Get subscription status if user is authenticated
+  let subscriptionStatus = null;
+  if (isAuthenticated && user) {
+    subscriptionStatus = await getUserSubscriptionStatus(user.id);
+    await chrome.storage.local.set({ subscriptionStatus });
+  }
+
+  // Notify all YouTube tabs about the auth state change
+  const tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
+  for (const tab of tabs) {
+    try {
+      await chrome.tabs.sendMessage(tab.id, {
+        type: "authStateChanged",
+        isAuthenticated,
+        user,
+        subscriptionStatus,
+      });
+    } catch (error) {
+      console.log(`Error sending message to tab ${tab.id}:`, error);
+    }
+  }
+};
+
+// Update the existing updateAuthState message listener
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "updateAuthState") {
+    (async () => {
+      try {
+        await updateAuthState(message.authState);
+        sendResponse({ success: true });
+      } catch (error) {
+        console.error("Error updating auth state:", error);
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true;
+  }
+});
+
+// Add this at the beginning of the file after imports
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "authStateChanged") {
+    (async () => {
+      try {
+        const { isAuthenticated, user } = message;
+
+        // Update local storage
+        await chrome.storage.local.set({
+          isAuthenticated,
+          user,
+        });
+
+        // Get subscription status if user is authenticated
+        if (isAuthenticated && user) {
+          const subscriptionStatus = await getUserSubscriptionStatus(user.id);
+          await chrome.storage.local.set({ subscriptionStatus });
+        }
+
+        // Notify all YouTube tabs
+        const tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
+        for (const tab of tabs) {
+          try {
+            await chrome.tabs.sendMessage(tab.id, {
+              type: "authStateChanged",
+              isAuthenticated,
+              user,
+            });
+          } catch (error) {
+            console.log(`Error sending message to tab ${tab.id}:`, error);
+          }
+        }
+
+        sendResponse({ success: true });
+      } catch (error) {
+        console.error("Error handling auth state change:", error);
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Keep the message channel open for async response
+  }
+});
