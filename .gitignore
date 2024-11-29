@@ -29,3 +29,8 @@ dist-ssr
 
 # Authentication
 manifest.json
+*.pem
+*.key
+*.crt
+*.zip
+*.crx
