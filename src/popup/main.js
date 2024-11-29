@@ -1,7 +1,7 @@
 import "./style.css";
 import { createButton, createImage } from "../utils/helper";
 import googleIcon from "../../public/google-logo.svg";
-import { initializeGoogleAuth } from "../auth/auth";
+
 import { getUserSubscriptionStatus } from "../background/firebaseServices";
 import authHandlers from "../auth/authHandlers";
 
@@ -61,7 +61,6 @@ const templates = {
 };
 
 // Initialize Google Auth
-const googleAuth = initializeGoogleAuth();
 const auth = authHandlers();
 // Main authentication controller
 class AuthController {
@@ -137,7 +136,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const authController = new AuthController(DOM.SIGNIN_CONTAINER_SELECTOR);
 
   // Check initial auth state
-  const authState = await googleAuth.checkAuthState();
+  const authState = await auth.checkAuthState();
   if (authState.isAuthenticated && authState.user) {
     authController.renderUserInfo(authState.user);
   } else {
