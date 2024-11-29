@@ -84,13 +84,13 @@ export default function authHandlers() {
           id: userInfo.sub,
         };
 
-        await chrome.storage.local.set({
+        await chrome.runtime.sendMessage({
+          type: "authStateChanged",
           isAuthenticated: true,
           user: userData,
         });
 
-        await sendMessageToTabs({
-          type: "authStateChanged",
+        await chrome.storage.local.set({
           isAuthenticated: true,
           user: userData,
         });
@@ -109,6 +109,12 @@ export default function authHandlers() {
     },
     signOut: async () => {
       try {
+        await chrome.runtime.sendMessage({
+          type: "authStateChanged",
+          isAuthenticated: false,
+          user: null,
+        });
+
         await chrome.storage.local.set({
           isAuthenticated: false,
           user: null,
