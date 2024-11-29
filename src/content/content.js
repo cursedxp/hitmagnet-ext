@@ -3,6 +3,7 @@ import { createHeader } from "./header";
 import { createDownloadAllButton } from "./downloadAllButton";
 import { createRemoveAllButton } from "./removeAllButton";
 import { createCollectionManager } from "./collectionManager";
+import { createPricingRedirect } from "./pricingRedirect";
 const checkAuthAndInitialize = async () => {
   if (document.getElementById("youtube-panel")) return;
 
@@ -131,7 +132,7 @@ const createPanel = (user) => {
     // First append buttonsContainer
     navigationContainer.appendChild(buttonsContainer);
 
-    // Then append collection manager if subscription is active
+    // Then append collection manager if subscription is active, otherwise show pricing redirect
     if (result.subscriptionStatus !== "inactive") {
       try {
         const collectionManager = await createCollectionManager();
@@ -141,6 +142,9 @@ const createPanel = (user) => {
       } catch (error) {
         console.error("Error creating collection manager:", error);
       }
+    } else {
+      const pricingRedirect = createPricingRedirect();
+      navigationContainer.insertBefore(pricingRedirect, buttonsContainer);
     }
 
     panel.appendChild(header);
