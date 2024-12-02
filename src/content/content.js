@@ -193,6 +193,13 @@ const createPanel = (user) => {
   });
 };
 
+// Add this message listener to reinitialize when auth state changes
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "authStateChanged") {
+    checkAuthAndInitialize();
+  }
+});
+
 if (window.location.hostname === "www.youtube.com") {
   checkAuthAndInitialize();
 }
