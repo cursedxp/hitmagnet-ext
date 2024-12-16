@@ -1,6 +1,7 @@
 import "./style.css";
 import { createButton, createImage } from "../utils/helper";
 import googleIcon from "../../public/google-logo.svg";
+import logo from "../../public/assets/logos/Logo.svg";
 
 import { getUserSubscriptionStatus } from "../background/firebaseServices";
 import authHandlers from "../auth/authHandlers";
@@ -17,8 +18,8 @@ const templates = {
   mainContainer: () => `
     <div class="container">
       <div class="app-header">
-        <img src="icon-48.png" alt="HitMagnet Logo" class="app-logo" />
-        <h1>HitMagnet</h1>
+
+        <img src="${logo}" alt="HitMagnet Logo" height="30" class="app-logo" />
         <span class="app-subtitle">Thumbnail Collector</span>
       </div>
       <div id="signin-container"></div>
