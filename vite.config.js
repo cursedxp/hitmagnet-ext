@@ -7,6 +7,7 @@ export default defineConfig(({ mode }) => {
   dotenv.config({ path: envPath });
 
   return {
+    publicDir: resolve(__dirname, "public"),
     root: resolve(__dirname, "src/popup"),
     build: {
       outDir: "../../dist",
