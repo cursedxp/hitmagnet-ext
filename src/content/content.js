@@ -3,22 +3,70 @@ import { createDownloadAllButton } from "./downloadAllButton";
 import { createRemoveAllButton } from "./removeAllButton";
 import { createCollectionManager } from "./collectionManager";
 import { createPricingRedirect } from "./pricingRedirect";
+
+let isContentScriptReady = false;
+
+const initializeContentScript = async () => {
+  try {
+    await checkAuthAndInitialize();
+    isContentScriptReady = true;
+    console.log("Content script fully initialized");
+  } catch (error) {
+    console.error("Error during initialization:", error);
+    // Still mark as ready to prevent hanging
+    isContentScriptReady = true;
+  }
+};
+
+// Document ready handler
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    if (window.location.hostname === "www.youtube.com") {
+      initializeContentScript();
+    }
+  });
+} else {
+  if (window.location.hostname === "www.youtube.com") {
+    initializeContentScript();
+  }
+}
+
 const checkAuthAndInitialize = async () => {
   if (document.getElementById("youtube-panel")) return;
 
-  chrome.runtime.sendMessage({ type: "checkAuth" }, (response) => {
-    if (chrome.runtime.lastError) {
-      console.error("Runtime error:", chrome.runtime.lastError);
-      return;
-    }
+  try {
+    const response = await new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({ type: "checkAuth" }, (response) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(response);
+        }
+      });
+    });
+
+    console.log("Auth check response:", response);
 
     if (response?.isAuthenticated && response?.user) {
+      // Store auth state in local storage
+      await chrome.storage.local.set({
+        isAuthenticated: true,
+        user: response.user,
+        subscriptionStatus: response.subscriptionStatus,
+      });
+
       console.log("Setting up video button observer...");
-      setupVideoButtonObserver();
+      await setupVideoButtonObserver();
       console.log("Creating panel...");
-      createPanel(response.user);
+      await createPanel(response.user);
     }
-  });
+
+    isContentScriptReady = true;
+    console.log("Content script is ready");
+  } catch (error) {
+    console.error("Error in checkAuthAndInitialize:", error);
+    isContentScriptReady = true;
+  }
 };
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -206,6 +254,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+// Add ping handler for readiness check
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "ping") {
+    sendResponse({ success: true, ready: isContentScriptReady });
+    return true;
+  }
+});
+
+// Initialize content script
 if (window.location.hostname === "www.youtube.com") {
-  checkAuthAndInitialize();
+  checkAuthAndInitialize().then(() => {
+    isContentScriptReady = true;
+  });
 }
