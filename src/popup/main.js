@@ -102,17 +102,14 @@ class AuthController {
   signIn = async () => {
     try {
       this.showStatusMessage("Signing in...", "info");
-      const signInResult = await auth.signIn();
+      const result = await auth.signIn();
 
-      if (!signInResult.success) {
-        throw new Error(signInResult.error || "Sign in failed");
-      }
-
-      const isInactive = signInResult.subscriptionStatus !== "active";
-      this.renderUserInfo(signInResult.user, isInactive);
-
-      if (!isInactive) {
-        this.showStatusMessage("Welcome back!", "success");
+      if (result?.isAuthenticated && result?.user) {
+        this.showStatusMessage("Signed in successfully", "success");
+        await this.updateAuthState(result);
+        this.renderUserInfo(result.user);
+      } else {
+        throw new Error("Sign in failed");
       }
     } catch (error) {
       console.error("Error during sign in process:", error);
@@ -120,12 +117,37 @@ class AuthController {
     }
   };
 
+  updateAuthState = async (authState) => {
+    try {
+      // Send message to background script to update auth state
+      await chrome.runtime.sendMessage({
+        type: "updateAuthState",
+        authState,
+      });
+    } catch (error) {
+      console.error("Error updating auth state:", error);
+      throw error;
+    }
+  };
+
   signOut = async () => {
     try {
       this.showStatusMessage("Signing out...", "info");
       await auth.signOut();
-      this.showStatusMessage("Signed out successfully", "success");
+
+      // Clear UI
+      const container = document.getElementById("app");
+      container.innerHTML = "";
+
+      // Show sign-in button
       this.renderSignInButton();
+
+      this.showStatusMessage("Signed out successfully", "success");
+
+      // Close the popup after a short delay
+      setTimeout(() => {
+        window.close();
+      }, 1500);
     } catch (error) {
       console.error("Error during sign out:", error);
       this.showStatusMessage("Sign out failed. Please try again.", "error");
