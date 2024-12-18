@@ -6,31 +6,6 @@ import { createPricingRedirect } from "./pricingRedirect";
 
 let isContentScriptReady = false;
 
-const initializeContentScript = async () => {
-  try {
-    await checkAuthAndInitialize();
-    isContentScriptReady = true;
-    console.log("Content script fully initialized");
-  } catch (error) {
-    console.error("Error during initialization:", error);
-    // Still mark as ready to prevent hanging
-    isContentScriptReady = true;
-  }
-};
-
-// Document ready handler
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    if (window.location.hostname === "www.youtube.com") {
-      initializeContentScript();
-    }
-  });
-} else {
-  if (window.location.hostname === "www.youtube.com") {
-    initializeContentScript();
-  }
-}
-
 const checkAuthAndInitialize = async () => {
   if (document.getElementById("youtube-panel")) return;
 
@@ -48,7 +23,6 @@ const checkAuthAndInitialize = async () => {
     console.log("Auth check response:", response);
 
     if (response?.isAuthenticated && response?.user) {
-      // Store auth state in local storage
       await chrome.storage.local.set({
         isAuthenticated: true,
         user: response.user,
@@ -68,6 +42,30 @@ const checkAuthAndInitialize = async () => {
     isContentScriptReady = true;
   }
 };
+
+const initializeContentScript = async () => {
+  try {
+    await checkAuthAndInitialize();
+    isContentScriptReady = true;
+    console.log("Content script fully initialized");
+  } catch (error) {
+    console.error("Error during initialization:", error);
+    isContentScriptReady = true;
+  }
+};
+
+// Document ready handler
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    if (window.location.hostname === "www.youtube.com") {
+      initializeContentScript();
+    }
+  });
+} else {
+  if (window.location.hostname === "www.youtube.com") {
+    initializeContentScript();
+  }
+}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "authStateChanged") {
