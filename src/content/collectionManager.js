@@ -1,4 +1,10 @@
 export const createCollectionManager = async () => {
+  const brandIcon = document.createElement("img");
+  brandIcon.src = chrome.runtime.getURL("assets/logos/Logo.svg");
+  brandIcon.style.cssText = `
+    height: 24px;
+    object-fit: contain;
+  `;
   console.log("Creating collection manager...");
   try {
     const inspirations = await getUserInspirations();
@@ -161,6 +167,7 @@ export const createCollectionManager = async () => {
     });
 
     // Append elements
+    collectionManager.appendChild(brandIcon);
     collectionManager.appendChild(selectors);
     collectionManager.appendChild(uploadButton);
     collectionManager.id = "collection-manager";
