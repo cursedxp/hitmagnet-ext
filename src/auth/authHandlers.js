@@ -7,16 +7,31 @@ export default function authHandlers() {
       const tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
       for (const tab of tabs) {
         try {
-          await new Promise((resolve, reject) => {
-            chrome.tabs.sendMessage(tab.id, message, (response) => {
-              if (chrome.runtime.lastError) {
-                // Ignore the error and resolve anyway
-                resolve();
+          let retries = 3;
+          while (retries > 0) {
+            try {
+              await new Promise((resolve, reject) => {
+                chrome.tabs.sendMessage(tab.id, message, (response) => {
+                  if (chrome.runtime.lastError) {
+                    reject(chrome.runtime.lastError);
+                  } else {
+                    resolve(response);
+                  }
+                });
+              });
+              break; // Success, exit retry loop
+            } catch (err) {
+              retries--;
+              if (retries === 0) {
+                console.log(
+                  `Failed to send message to tab ${tab.id} after 3 attempts`
+                );
               } else {
-                resolve(response);
+                // Wait before retrying
+                await new Promise((resolve) => setTimeout(resolve, 1000));
               }
-            });
-          });
+            }
+          }
         } catch (err) {
           console.log(`Error sending message to tab ${tab.id}:`, err);
         }
