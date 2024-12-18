@@ -2,14 +2,16 @@ import { createThumbnailPreview } from "./imagePreview";
 
 const addButtonsToVideos = () => {
   // First check if user is authenticated
-  chrome.storage.local.get(["isAuthenticated"], (result) => {
-    if (!result.isAuthenticated) {
+  chrome.storage.local.get(["isAuthenticated", "user"], (result) => {
+    if (!result.isAuthenticated || !result.user) {
       // Remove existing buttons if user is not authenticated
       document
         .querySelectorAll(".custom-button")
         .forEach((btn) => btn.remove());
+      console.log("User not authenticated, removing buttons");
       return;
     }
+    console.log("User authenticated, adding buttons");
 
     // Rest of your existing button adding logic
     const metadataSelectors = [
