@@ -13,123 +13,140 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-// Get subscription status
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-  if (message.type === "getSubscriptionStatus") {
-    const userId = sender.tab ? sender.tab.userId : null;
-    const subscriptionStatus = await getUserSubscriptionStatus(userId);
-    sendResponse({ subscriptionStatus });
-  }
-  return true;
-});
+// Message type constants
+const MessageTypes = {
+  CHECK_AUTH: "checkAuth",
+  AUTH_STATE_CHANGED: "authStateChanged",
+  UPDATE_AUTH_STATE: "updateAuthState",
+  GET_USER_INSPIRATIONS: "getUserInspirations",
+  CREATE_NEW_INSPIRATION: "createNewInspirationCollection",
+  UPDATE_INSPIRATION: "updateInspirationCollection",
+  ADD_VIDEO: "addVideo",
+};
 
-// Check authentication
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === "checkAuth") {
-    chrome.storage.local.get(["isAuthenticated", "user"], (result) => {
-      sendResponse(result);
-    });
-    return true;
-  }
-});
-
-// Add this message handler for videos
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "addVideo") {
-    // Get existing videos from storage
-    chrome.storage.local.get(["videos"], (result) => {
-      const videos = result.videos || [];
-      videos.push(message.videoData);
-
-      // Save updated videos back to storage
-      chrome.storage.local.set({ videos }, () => {
+// Helper function to check if tab is ready
+const isTabReady = async (tabId) => {
+  try {
+    const response = await new Promise((resolve, reject) => {
+      chrome.tabs.sendMessage(tabId, { type: "ping" }, (response) => {
         if (chrome.runtime.lastError) {
-          console.error("Error saving video:", chrome.runtime.lastError);
-          sendResponse({ success: false, error: chrome.runtime.lastError });
+          reject(chrome.runtime.lastError);
         } else {
-          sendResponse({ success: true });
+          resolve(response);
         }
       });
     });
-
-    return true; // Keep message channel open for async response
+    return response?.ready === true;
+  } catch {
+    return false;
   }
-});
+};
 
-// Get inspirations
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "getUserInspirations") {
-    (async () => {
-      try {
-        const { user } = await chrome.storage.local.get(["user"]);
-        const userId = user?.id;
+// Helper function to wait for tab to be ready with exponential backoff
+const waitForTab = async (tabId, maxAttempts = 5) => {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (await isTabReady(tabId)) {
+      return true;
+    }
+    // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+    await new Promise((resolve) =>
+      setTimeout(resolve, Math.pow(2, attempt) * 1000)
+    );
+  }
+  return false;
+};
 
-        if (!userId) {
-          sendResponse({ inspirations: [] });
-          return;
-        }
+// Improved notify tabs function
+const notifyTabs = async (message) => {
+  try {
+    const tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
 
-        const inspirations = await getUserInspirations(userId);
-        sendResponse({ inspirations: inspirations || [] });
-      } catch (error) {
-        console.error("Error getting inspirations:", error);
-        sendResponse({ inspirations: [], error: error.message });
+    for (const tab of tabs) {
+      // Wait for tab to be ready before sending message
+      const isReady = await waitForTab(tab.id);
+      if (!isReady) {
+        console.log(`Tab ${tab.id} not ready after all attempts`);
+        continue; // Skip this tab and move to next
       }
-    })();
-    return true; // Keep the message channel open for async response
+
+      try {
+        await chrome.tabs.sendMessage(tab.id, message);
+        console.log(`Message sent successfully to tab ${tab.id}`);
+      } catch (error) {
+        console.error(`Failed to send message to tab ${tab.id}:`, error);
+      }
+    }
+  } catch (error) {
+    console.error("Error in notifyTabs:", error);
   }
+};
+
+// Central message handler
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  (async () => {
+    try {
+      switch (message.type) {
+        case MessageTypes.AUTH_STATE_CHANGED:
+        case MessageTypes.UPDATE_AUTH_STATE:
+          await updateAuthState(message.authState || message);
+          sendResponse({ success: true });
+          break;
+
+        case MessageTypes.CHECK_AUTH:
+          const authState = await chrome.storage.local.get([
+            "isAuthenticated",
+            "user",
+            "subscriptionStatus",
+          ]);
+          sendResponse(authState);
+          break;
+
+        case MessageTypes.GET_USER_INSPIRATIONS:
+          const userId = await getCurrentUserId();
+          const inspirations = await getUserInspirations(userId);
+          sendResponse({ inspirations });
+          break;
+
+        case MessageTypes.CREATE_NEW_INSPIRATION:
+          const { collectionName } = message;
+          const currentUserId = await getCurrentUserId();
+          const newCollection = await createNewInspirationCollection(
+            currentUserId,
+            collectionName
+          );
+          sendResponse({ success: true, newCollection });
+          break;
+
+        case MessageTypes.UPDATE_INSPIRATION:
+          const { collectionId, thumbnails } = message;
+          const uid = await getCurrentUserId();
+          await updateInspirationCollection(uid, collectionId, thumbnails);
+          sendResponse({ success: true });
+          break;
+
+        case MessageTypes.ADD_VIDEO:
+          const { videoId, videoData } = message;
+          // Handle video addition logic here
+          sendResponse({ success: true });
+          break;
+
+        default:
+          throw new Error(`Unknown message type: ${message.type}`);
+      }
+    } catch (error) {
+      console.error(`Error handling message type ${message.type}:`, error);
+      sendResponse({ success: false, error: error.message });
+    }
+  })();
+  return true;
 });
 
-// Create new inspiration collection
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "createNewInspirationCollection") {
-    (async () => {
-      try {
-        const { user } = await chrome.storage.local.get(["user"]);
-        const userId = user?.id;
-        if (!userId) {
-          sendResponse({ success: false, error: "User not authenticated" });
-          return;
-        }
-        const newCollection = await createNewInspirationCollection(
-          userId,
-          message.collectionName
-        );
-        sendResponse({ success: true, newCollection });
-      } catch (error) {
-        console.error("Error creating collection:", error);
-        sendResponse({ success: false, error: error.message });
-      }
-    })();
-    return true; // Keep the message channel open for async response
-  }
-});
-
-// Update inspiration collection
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "updateInspirationCollection") {
-    (async () => {
-      try {
-        const { user } = await chrome.storage.local.get(["user"]);
-        const userId = user?.id;
-        if (!userId) {
-          sendResponse({ success: false, error: "User not authenticated" });
-          return;
-        }
-        const success = await updateInspirationCollection(
-          userId,
-          message.collectionId,
-          message.thumbnails
-        );
-        sendResponse({ success });
-      } catch (error) {
-        console.error("Error updating collection:", error);
-        sendResponse({ success: false, error: error.message });
-      }
-    })();
-    return true; // Keep the message channel open for async response
-  }
-});
+// Helper function to get current user ID
+async function getCurrentUserId() {
+  const { user } = await chrome.storage.local.get(["user"]);
+  if (!user?.id) throw new Error("No authenticated user found");
+  return user.id;
+}
 
 // Add this function to handle auth state updates
 const updateAuthState = async (authState) => {
@@ -148,77 +165,34 @@ const updateAuthState = async (authState) => {
     await chrome.storage.local.set({ subscriptionStatus });
   }
 
+  // Add delay to allow content scripts to load
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   // Notify all YouTube tabs about the auth state change
   const tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
   for (const tab of tabs) {
-    try {
-      await chrome.tabs.sendMessage(tab.id, {
-        type: "authStateChanged",
-        isAuthenticated,
-        user,
-        subscriptionStatus,
-      });
-    } catch (error) {
-      console.log(`Error sending message to tab ${tab.id}:`, error);
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          type: "authStateChanged",
+          isAuthenticated,
+          user,
+          subscriptionStatus,
+        });
+        break; // Success, exit retry loop
+      } catch (error) {
+        retries--;
+        if (retries === 0) {
+          console.log(
+            `Failed to send message to tab ${tab.id} after 3 attempts:`,
+            error
+          );
+        } else {
+          // Wait before retrying
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
     }
   }
 };
-
-// Update the existing updateAuthState message listener
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "updateAuthState") {
-    (async () => {
-      try {
-        await updateAuthState(message.authState);
-        sendResponse({ success: true });
-      } catch (error) {
-        console.error("Error updating auth state:", error);
-        sendResponse({ success: false, error: error.message });
-      }
-    })();
-    return true;
-  }
-});
-
-// Add this at the beginning of the file after imports
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "authStateChanged") {
-    (async () => {
-      try {
-        const { isAuthenticated, user } = message;
-
-        // Update local storage
-        await chrome.storage.local.set({
-          isAuthenticated,
-          user,
-        });
-
-        // Get subscription status if user is authenticated
-        if (isAuthenticated && user) {
-          const subscriptionStatus = await getUserSubscriptionStatus(user.id);
-          await chrome.storage.local.set({ subscriptionStatus });
-        }
-
-        // Notify all YouTube tabs
-        const tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
-        for (const tab of tabs) {
-          try {
-            await chrome.tabs.sendMessage(tab.id, {
-              type: "authStateChanged",
-              isAuthenticated,
-              user,
-            });
-          } catch (error) {
-            console.log(`Error sending message to tab ${tab.id}:`, error);
-          }
-        }
-
-        sendResponse({ success: true });
-      } catch (error) {
-        console.error("Error handling auth state change:", error);
-        sendResponse({ success: false, error: error.message });
-      }
-    })();
-    return true; // Keep the message channel open for async response
-  }
-});
