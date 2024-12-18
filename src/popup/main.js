@@ -104,11 +104,15 @@ class AuthController {
       this.showStatusMessage("Signing in...", "info");
       const signInResult = await auth.signIn();
 
-      if (signInResult.subscriptionStatus === "active") {
+      if (!signInResult.success) {
+        throw new Error(signInResult.error || "Sign in failed");
+      }
+
+      const isInactive = signInResult.subscriptionStatus !== "active";
+      this.renderUserInfo(signInResult.user, isInactive);
+
+      if (!isInactive) {
         this.showStatusMessage("Welcome back!", "success");
-        this.renderUserInfo(signInResult.user);
-      } else {
-        this.renderUserInfo(signInResult.user, true);
       }
     } catch (error) {
       console.error("Error during sign in process:", error);

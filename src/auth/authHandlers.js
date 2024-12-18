@@ -75,29 +75,32 @@ export default function authHandlers() {
           throw new Error("Failed to obtain user information");
         }
 
-        const subscriptionStatus = await getUserSubscriptionStatus(
-          userInfo.sub
-        );
-
         const userData = {
           ...userInfo,
           id: userInfo.sub,
         };
 
-        await chrome.runtime.sendMessage({
-          type: "authStateChanged",
-          isAuthenticated: true,
-          user: userData,
-        });
+        const subscriptionStatus = await getUserSubscriptionStatus(
+          userInfo.sub
+        );
 
         await chrome.storage.local.set({
           isAuthenticated: true,
           user: userData,
+          subscriptionStatus: subscriptionStatus,
+        });
+
+        await chrome.runtime.sendMessage({
+          type: "authStateChanged",
+          isAuthenticated: true,
+          user: userData,
+          subscriptionStatus: subscriptionStatus,
         });
 
         return {
           success: true,
-          user: { ...userData, subscriptionStatus: subscriptionStatus },
+          user: userData,
+          subscriptionStatus: subscriptionStatus,
         };
       } catch (error) {
         console.error("Error signing in:", error);
