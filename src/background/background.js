@@ -27,7 +27,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "checkAuth") {
     chrome.storage.local.get(["isAuthenticated", "user"], (result) => {
-      console.log("Auth check result:", result);
       sendResponse(result);
     });
     return true;
@@ -37,8 +36,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Add this message handler for videos
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "addVideo") {
-    console.log("Received addVideo message:", message);
-
     // Get existing videos from storage
     chrome.storage.local.get(["videos"], (result) => {
       const videos = result.videos || [];
@@ -50,7 +47,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           console.error("Error saving video:", chrome.runtime.lastError);
           sendResponse({ success: false, error: chrome.runtime.lastError });
         } else {
-          console.log("Video saved successfully");
           sendResponse({ success: true });
         }
       });

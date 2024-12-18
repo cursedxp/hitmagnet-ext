@@ -26,16 +26,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const buttons = document.querySelectorAll(".custom-button");
 
     if (message.isAuthenticated && message.user) {
-      // User is authenticated
-      if (panel) panel.remove();
-      createPanel(message.user);
-      setupVideoButtonObserver();
-    } else {
-      // User is not authenticated
+      // First remove existing elements
       if (panel) panel.remove();
       buttons.forEach((btn) => btn.remove());
 
-      // Stop the observer if it exists
+      // Update storage before creating new elements
+      chrome.storage.local.set(
+        { isAuthenticated: true, user: message.user },
+        () => {
+          createPanel(message.user);
+          setupVideoButtonObserver();
+        }
+      );
+    } else {
+      // Handle logout
+      if (panel) panel.remove();
+      buttons.forEach((btn) => btn.remove());
+
       if (window.videoButtonObserver) {
         window.videoButtonObserver.disconnect();
         window.videoButtonObserver = null;
