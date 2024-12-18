@@ -165,34 +165,41 @@ const updateAuthState = async (authState) => {
     await chrome.storage.local.set({ subscriptionStatus });
   }
 
-  // Add delay to allow content scripts to load
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // Notify all YouTube tabs about the auth state change
+  // Get all YouTube tabs
   const tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
+
   for (const tab of tabs) {
-    let retries = 3;
-    while (retries > 0) {
-      try {
-        await chrome.tabs.sendMessage(tab.id, {
-          type: "authStateChanged",
-          isAuthenticated,
-          user,
-          subscriptionStatus,
-        });
-        break; // Success, exit retry loop
-      } catch (error) {
-        retries--;
-        if (retries === 0) {
-          console.log(
-            `Failed to send message to tab ${tab.id} after 3 attempts:`,
-            error
-          );
-        } else {
-          // Wait before retrying
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // Reload the tab to ensure clean state
+      await chrome.tabs.reload(tab.id);
+
+      // Wait for tab to load and then send auth state
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Send auth state message with retries
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          await chrome.tabs.sendMessage(tab.id, {
+            type: "authStateChanged",
+            isAuthenticated,
+            user,
+            subscriptionStatus,
+          });
+          break; // Success, exit retry loop
+        } catch (error) {
+          retries--;
+          if (retries === 0) {
+            console.error(
+              `Failed to send message to tab ${tab.id} after all retries`
+            );
+          } else {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
         }
       }
+    } catch (error) {
+      console.error(`Error handling tab ${tab.id}:`, error);
     }
   }
 };

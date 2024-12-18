@@ -69,31 +69,52 @@ if (document.readyState === "loading") {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "authStateChanged") {
+    console.log("Auth state changed, reinitializing...");
+
+    // Remove existing elements
     const panel = document.getElementById("youtube-panel");
     const buttons = document.querySelectorAll(".custom-button");
 
-    if (message.isAuthenticated && message.user) {
-      // First remove existing elements
-      if (panel) panel.remove();
-      buttons.forEach((btn) => btn.remove());
+    if (panel) panel.remove();
+    buttons.forEach((btn) => btn.remove());
 
-      // Update storage before creating new elements
+    if (message.isAuthenticated && message.user) {
+      // Update storage and reinitialize
       chrome.storage.local.set(
-        { isAuthenticated: true, user: message.user },
-        () => {
-          createPanel(message.user);
-          setupVideoButtonObserver();
+        {
+          isAuthenticated: true,
+          user: message.user,
+          subscriptionStatus: message.subscriptionStatus,
+        },
+        async () => {
+          // Disconnect existing observer
+          if (window.videoButtonObserver) {
+            window.videoButtonObserver.disconnect();
+            window.videoButtonObserver = null;
+          }
+
+          // Reinitialize components
+          await setupVideoButtonObserver();
+          await createPanel(message.user);
+
+          console.log("Components reinitialized after auth change");
         }
       );
     } else {
       // Handle logout
-      if (panel) panel.remove();
-      buttons.forEach((btn) => btn.remove());
-
-      if (window.videoButtonObserver) {
-        window.videoButtonObserver.disconnect();
-        window.videoButtonObserver = null;
-      }
+      chrome.storage.local.set(
+        {
+          isAuthenticated: false,
+          user: null,
+          subscriptionStatus: null,
+        },
+        () => {
+          if (window.videoButtonObserver) {
+            window.videoButtonObserver.disconnect();
+            window.videoButtonObserver = null;
+          }
+        }
+      );
     }
   }
   sendResponse({ success: true });
