@@ -1,5 +1,4 @@
 import { setupVideoButtonObserver } from "./addButton";
-import { createHeader } from "./header";
 import { createDownloadAllButton } from "./downloadAllButton";
 import { createRemoveAllButton } from "./removeAllButton";
 import { createCollectionManager } from "./collectionManager";
@@ -14,8 +13,10 @@ const checkAuthAndInitialize = async () => {
     }
 
     if (response?.isAuthenticated && response?.user) {
+      console.log("Setting up video button observer...");
+      setupVideoButtonObserver();
+      console.log("Creating panel...");
       createPanel(response.user);
-      setupVideoButtonObserver(); // Only setup buttons when authenticated
     }
   });
 };
@@ -74,7 +75,6 @@ const createPanel = (user) => {
       display: none;
     `;
 
-    const header = createHeader(user);
     const content = document.createElement("div");
     content.id = "panel-content";
     content.style.cssText = `
@@ -154,7 +154,6 @@ const createPanel = (user) => {
       navigationContainer.insertBefore(pricingRedirect, buttonsContainer);
     }
 
-    panel.appendChild(header);
     panel.appendChild(navigationContainer);
     panel.appendChild(content);
 
