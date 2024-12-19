@@ -22,7 +22,11 @@ const MessageTypes = {
   CREATE_NEW_INSPIRATION: "createNewInspirationCollection",
   UPDATE_INSPIRATION: "updateInspirationCollection",
   ADD_VIDEO: "addVideo",
+  WEBSITE_AUTH: "websiteAuth",
 };
+
+// Add website origin validation
+const ALLOWED_ORIGINS = ["https://www.hitmagnet.app"];
 
 // Helper function to check if tab is ready
 const isTabReady = async (tabId) => {
@@ -203,3 +207,51 @@ const updateAuthState = async (authState) => {
     }
   }
 };
+
+// Listen for messages from the website
+chrome.runtime.onMessageExternal.addListener(
+  async (message, sender, sendResponse) => {
+    // Verify sender origin
+    if (!ALLOWED_ORIGINS.includes(sender.origin)) {
+      console.error("Unauthorized message origin:", sender.origin);
+      sendResponse({ success: false, error: "Unauthorized origin" });
+      return;
+    }
+
+    if (message.type === MessageTypes.WEBSITE_AUTH) {
+      try {
+        const { userInfo } = message;
+
+        // Validate required user info
+        if (!userInfo?.id || !userInfo?.email) {
+          throw new Error("Invalid user info received");
+        }
+
+        // Create auth state
+        const authState = {
+          isAuthenticated: true,
+          user: {
+            id: userInfo.id,
+            email: userInfo.email,
+            name: userInfo.name || "",
+            picture: userInfo.picture || "",
+          },
+        };
+
+        // Update storage
+        await chrome.storage.local.set(authState);
+
+        // Notify all tabs about the auth state change
+        await notifyTabs({
+          type: "authStateChanged",
+          ...authState,
+        });
+
+        sendResponse({ success: true });
+      } catch (error) {
+        console.error("Website auth error:", error);
+        sendResponse({ success: false, error: error.message });
+      }
+    }
+  }
+);
