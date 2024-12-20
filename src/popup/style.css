@@ -10,7 +10,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -302,4 +302,79 @@ body {
     animation: none !important;
     transition: none !important;
   }
+}
+
+.login-prompt {
+  text-align: center;
+  padding: 20px;
+  background: #ffffff0d;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+.login-prompt h2 {
+  color: #fff;
+  margin-bottom: 12px;
+  font-size: 1.2rem;
+}
+
+.login-prompt p {
+  color: #999;
+  line-height: 1.5;
+}
+
+.login-prompt a {
+  color: #ffd700;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-prompt a:hover {
+  text-decoration: underline;
+}
+
+.login-button {
+  background-color: #fff;
+  color: #3b82f6;
+  font-size: 1rem;
+  font-weight: 400;
+  padding: 12px 24px;
+  border: 2px solid #3b82f6;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.login-button:hover {
+  background-color: #3b82f6;
+  color: #fff;
+}
+
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  min-width: 280px;
+}
+
+.logo-container {
+  margin-bottom: 16px;
+}
+
+.logo {
+  width: 140px;
+  height: auto;
+}
+
+.user-email {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 2px;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }

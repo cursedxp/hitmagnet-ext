@@ -29,9 +29,12 @@ const templates = {
   userInfo: (user, isInactive) => `
     <div class="user-info">
       <div class="user-header">
-        <img class="user-picture" src="${user.picture}" alt="User Picture" />
+        <img class="user-picture" src="${
+          user.picture || user.image
+        }" alt="User Picture" />
         <div class="user-details">
-          <p class="user-name">${user.name}</p>
+          <p class="user-name">${user.name || "User"}</p>
+          <p class="user-email">${user.email}</p>
           ${
             isInactive
               ? `
@@ -62,10 +65,41 @@ const templates = {
 
 // Main initialization
 document.addEventListener("DOMContentLoaded", async () => {
+  // Initial render of container
   document.querySelector(DOM.APP_SELECTOR).innerHTML =
     templates.mainContainer();
-  const loginButton = document.getElementById("loginButton");
-  loginButton.addEventListener("click", () => {
-    chrome.tabs.create({ url: "https://www.hitmagnet.app/" });
-  });
+
+  // Check authentication status
+  const { isAuthenticated, user, subscriptionStatus } =
+    await chrome.storage.local.get([
+      "isAuthenticated",
+      "user",
+      "subscriptionStatus",
+    ]);
+
+  const signinContainer = document.querySelector(DOM.SIGNIN_CONTAINER_SELECTOR);
+
+  if (isAuthenticated && user) {
+    // User is authenticated, show user info
+    const isInactive = subscriptionStatus === "inactive";
+    signinContainer.innerHTML = templates.userInfo(user, isInactive);
+
+    // Add sign out handler
+    document
+      .querySelector(DOM.SIGNOUT_BUTTON_SELECTOR)
+      .addEventListener("click", async () => {
+        await chrome.runtime.sendMessage({
+          type: "authStateChanged",
+          isAuthenticated: false,
+          user: null,
+        });
+        window.location.reload();
+      });
+  } else {
+    // User is not authenticated, show login button
+    const loginButton = document.getElementById("loginButton");
+    loginButton.addEventListener("click", () => {
+      chrome.tabs.create({ url: "https://www.hitmagnet.app/extension-signin" });
+    });
+  }
 });

@@ -160,52 +160,36 @@ const updateAuthState = async (authState) => {
   await chrome.storage.local.set({
     isAuthenticated,
     user,
+    subscriptionStatus: authState.subscriptionStatus,
   });
-
-  // Get subscription status if user is authenticated
-  let subscriptionStatus = null;
-  if (isAuthenticated && user) {
-    subscriptionStatus = await getUserSubscriptionStatus(user.id);
-    await chrome.storage.local.set({ subscriptionStatus });
-  }
 
   // Get all YouTube tabs
   const tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
 
-  for (const tab of tabs) {
-    try {
-      // Reload the tab to ensure clean state
-      await chrome.tabs.reload(tab.id);
-
-      // Wait for tab to load and then send auth state
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Send auth state message with retries
-      let retries = 3;
-      while (retries > 0) {
-        try {
-          await chrome.tabs.sendMessage(tab.id, {
-            type: "authStateChanged",
-            isAuthenticated,
-            user,
-            subscriptionStatus,
-          });
-          break; // Success, exit retry loop
-        } catch (error) {
-          retries--;
-          if (retries === 0) {
-            console.error(
-              `Failed to send message to tab ${tab.id} after all retries`
-            );
-          } else {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-          }
+  // Send messages to all tabs concurrently
+  await Promise.all(
+    tabs.map(async (tab) => {
+      try {
+        // Wait for tab to be ready before sending message
+        const isReady = await waitForTab(tab.id);
+        if (!isReady) {
+          console.log(`Tab ${tab.id} not ready, skipping`);
+          return;
         }
+
+        await chrome.tabs.sendMessage(tab.id, {
+          type: "authStateChanged",
+          isAuthenticated,
+          user,
+          subscriptionStatus: authState.subscriptionStatus,
+        });
+
+        console.log(`Auth state updated for tab ${tab.id}`);
+      } catch (error) {
+        console.error(`Error updating tab ${tab.id}:`, error);
       }
-    } catch (error) {
-      console.error(`Error handling tab ${tab.id}:`, error);
-    }
-  }
+    })
+  );
 };
 
 // Listen for messages from the website
@@ -234,8 +218,9 @@ chrome.runtime.onMessageExternal.addListener(
             id: userInfo.id,
             email: userInfo.email,
             name: userInfo.name || "",
-            picture: userInfo.picture || "",
+            picture: userInfo.image || "",
           },
+          subscriptionStatus: userInfo.subscriptionStatus || "inactive",
         };
 
         // Update storage
