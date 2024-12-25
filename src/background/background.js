@@ -195,6 +195,9 @@ const updateAuthState = async (authState) => {
 // Listen for messages from the website
 chrome.runtime.onMessageExternal.addListener(
   async (message, sender, sendResponse) => {
+    console.log("External message received:", message);
+    console.log("Sender:", sender);
+
     // Verify sender origin
     if (!ALLOWED_ORIGINS.includes(sender.origin)) {
       console.error("Unauthorized message origin:", sender.origin);
@@ -205,6 +208,7 @@ chrome.runtime.onMessageExternal.addListener(
     if (message.type === MessageTypes.WEBSITE_AUTH) {
       try {
         const { userInfo } = message;
+        console.log("Processing auth with userInfo:", userInfo);
 
         // Validate required user info
         if (!userInfo?.id || !userInfo?.email) {
@@ -218,19 +222,33 @@ chrome.runtime.onMessageExternal.addListener(
             id: userInfo.id,
             email: userInfo.email,
             name: userInfo.name || "",
-            picture: userInfo.image || "",
+            image: userInfo.image || "",
           },
           subscriptionStatus: userInfo.subscriptionStatus || "inactive",
         };
 
+        console.log("Setting auth state:", authState);
+
         // Update storage
         await chrome.storage.local.set(authState);
+
+        // Verify storage was updated
+        const storedData = await chrome.storage.local.get(null);
+        console.log("Storage after update:", storedData);
 
         // Notify all tabs about the auth state change
         await notifyTabs({
           type: "authStateChanged",
           ...authState,
         });
+
+        // Reload all YouTube tabs
+        const youtubeTabs = await chrome.tabs.query({
+          url: "*://*.youtube.com/*",
+        });
+        for (const tab of youtubeTabs) {
+          await chrome.tabs.reload(tab.id);
+        }
 
         sendResponse({ success: true });
       } catch (error) {

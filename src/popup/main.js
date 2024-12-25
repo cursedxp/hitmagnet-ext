@@ -30,7 +30,7 @@ const templates = {
     <div class="user-info">
       <div class="user-header">
         <img class="user-picture" src="${
-          user.picture || user.image
+          user.image || user.image
         }" alt="User Picture" />
         <div class="user-details">
           <p class="user-name">${user.name || "User"}</p>
@@ -80,7 +80,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const signinContainer = document.querySelector(DOM.SIGNIN_CONTAINER_SELECTOR);
 
   if (isAuthenticated && user) {
-    // User is authenticated, show user info
+    // User is authenticated, show user info and logout button
     const isInactive = subscriptionStatus === "inactive";
     signinContainer.innerHTML = templates.userInfo(user, isInactive);
 
@@ -88,12 +88,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     document
       .querySelector(DOM.SIGNOUT_BUTTON_SELECTOR)
       .addEventListener("click", async () => {
-        await chrome.runtime.sendMessage({
-          type: "authStateChanged",
-          isAuthenticated: false,
-          user: null,
-        });
-        window.location.reload();
+        try {
+          // Clear auth state
+          await chrome.storage.local.set({
+            isAuthenticated: false,
+            user: null,
+            subscriptionStatus: null,
+          });
+
+          // Notify all tabs about logout
+          const tabs = await chrome.tabs.query({ url: "*://*.youtube.com/*" });
+          for (const tab of tabs) {
+            try {
+              // Notify tab about auth change
+              await chrome.tabs.sendMessage(tab.id, {
+                type: "authStateChanged",
+                isAuthenticated: false,
+                user: null,
+              });
+              // Reload the tab
+              await chrome.tabs.reload(tab.id);
+            } catch (err) {
+              console.warn(`Error handling tab ${tab.id}:`, err);
+            }
+          }
+
+          // Reload popup
+          window.location.reload();
+        } catch (error) {
+          console.error("Logout error:", error);
+        }
       });
   } else {
     // User is not authenticated, show login button
