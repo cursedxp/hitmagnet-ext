@@ -28,17 +28,27 @@ const addButtonsToVideos = () => {
         if (element.querySelector(".custom-button")) return;
 
         const button = document.createElement("button");
-        button.textContent = "+ Add";
+        button.innerHTML = `
+          <img 
+            src="${chrome.runtime.getURL("assets/icons/favicon-48x48.png")}" 
+            width="16" 
+            height="16" 
+            alt="Add to collection"
+            onerror="this.innerHTML = '+'"
+          />
+        `;
         button.className = "custom-button";
         button.style.cssText = `
           margin-left: 8px;
-          padding: 4px 8px;
-          background: #065fd4;
           color: white;
+          background: none;
           border: none;
           border-radius: 2px;
           font-size: 12px;
           cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         `;
 
         button.addEventListener("click", async (e) => {
