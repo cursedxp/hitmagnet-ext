@@ -121,17 +121,52 @@ export const createCollectionManager = async () => {
       const selectedCollectionId = selectors.value;
       if (!selectedCollectionId) return;
 
-      // Get all thumbnail previews from the panel
       const thumbnailPreviews = document.querySelectorAll(
         "#panel-content .thumbnail-preview"
       );
-      const thumbnails = Array.from(thumbnailPreviews).map((preview) => {
-        const img = preview.querySelector("img");
-        return {
-          url: img.src,
-          addedAt: new Date(),
-        };
-      });
+
+      // Helper function to get highest quality thumbnail
+      const getHighestQualityThumbnail = async (url) => {
+        try {
+          const videoId = url.match(/\/vi\/([^/]+)\//)?.[1];
+          if (!videoId) return url;
+
+          const qualities = [
+            "maxresdefault",
+            "sddefault",
+            "hqdefault",
+            "mqdefault",
+            "default",
+          ];
+
+          // Try each quality until we find one that exists
+          for (const quality of qualities) {
+            const highQualityUrl = `https://img.youtube.com/vi/${videoId}/${quality}.jpg`;
+            const response = await fetch(highQualityUrl);
+            if (response.ok) {
+              return highQualityUrl;
+            }
+          }
+
+          // If none worked, return original URL
+          return url;
+        } catch (error) {
+          console.error("Error getting high quality thumbnail:", error);
+          return url;
+        }
+      };
+
+      // Get thumbnails with highest available quality
+      const thumbnails = await Promise.all(
+        Array.from(thumbnailPreviews).map(async (preview) => {
+          const img = preview.querySelector("img");
+          const highQualityUrl = await getHighestQualityThumbnail(img.src);
+          return {
+            url: highQualityUrl,
+            addedAt: new Date(),
+          };
+        })
+      );
 
       if (thumbnails.length === 0) return;
 
