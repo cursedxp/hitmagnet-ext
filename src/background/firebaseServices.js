@@ -26,13 +26,13 @@ export async function getUserInspirations(userId) {
 
     if (userSnapshot.exists()) {
       const userData = userSnapshot.data();
-      return userData.inspirations || [];
+      return userData.collections || [];
     } else {
       console.log("No such document for user:", userId);
       return [];
     }
   } catch (error) {
-    console.error("Error getting inspirations:", error);
+    console.error("Error getting collections:", error);
     throw error;
   }
 }
@@ -41,7 +41,7 @@ export async function createNewInspirationCollection(userId, collectionName) {
   const userSnapshot = await getDoc(userDoc);
   if (userSnapshot.exists()) {
     const userData = userSnapshot.data();
-    userData.inspirations.push({
+    userData.collections.push({
       id: uuidv4(),
       name: collectionName,
       thumbnails: [],
@@ -49,7 +49,7 @@ export async function createNewInspirationCollection(userId, collectionName) {
       updatedAt: new Date(),
     });
     await setDoc(userDoc, userData);
-    return userData.inspirations[userData.inspirations.length - 1];
+    return userData.collections[userData.collections.length - 1];
   } else {
     console.log("No such document for user:", userId);
     return null;
@@ -64,7 +64,7 @@ export async function updateInspirationCollection(
   const userSnapshot = await getDoc(userDoc);
   if (userSnapshot.exists()) {
     const userData = userSnapshot.data();
-    const collection = userData.inspirations.find((c) => c.id === collectionId);
+    const collection = userData.collections.find((c) => c.id === collectionId);
     if (collection) {
       collection.thumbnails = [...collection.thumbnails, ...thumbnails];
       collection.updatedAt = new Date();
