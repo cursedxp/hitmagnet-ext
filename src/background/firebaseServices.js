@@ -41,6 +41,9 @@ export async function createNewInspirationCollection(userId, collectionName) {
   const userSnapshot = await getDoc(userDoc);
   if (userSnapshot.exists()) {
     const userData = userSnapshot.data();
+    if (!userData.collections) {
+      userData.collections = [];
+    }
     userData.collections.push({
       id: uuidv4(),
       name: collectionName,
@@ -51,8 +54,19 @@ export async function createNewInspirationCollection(userId, collectionName) {
     await setDoc(userDoc, userData);
     return userData.collections[userData.collections.length - 1];
   } else {
-    console.log("No such document for user:", userId);
-    return null;
+    const newUserData = {
+      collections: [
+        {
+          id: uuidv4(),
+          name: collectionName,
+          thumbnails: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+    };
+    await setDoc(userDoc, newUserData);
+    return newUserData.collections[0];
   }
 }
 export async function updateInspirationCollection(
